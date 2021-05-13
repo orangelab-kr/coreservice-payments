@@ -1,6 +1,12 @@
-import dotenv from 'dotenv';
-import getRouter from './routes';
-import serverless from 'serverless-http';
-if (process.env.NODE_ENV === 'development') dotenv.config();
+import { Database, getRouter } from '.';
 
-export const handler = serverless(getRouter());
+import serverless from 'serverless-http';
+
+export * from './controllers';
+export * from './middlewares';
+export * from './routes';
+export * from './tools';
+
+Database.initPrisma();
+const options = { basePath: '/v1/payments' };
+export const handler = serverless(getRouter(), options);

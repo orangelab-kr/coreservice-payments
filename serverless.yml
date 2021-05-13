@@ -1,21 +1,28 @@
-service: 'serverless-template'
+service: 'openapi-discount'
+useDotenv: false
 
 provider:
   name: aws
   runtime: nodejs12.x
   region: ap-northeast-2
-  stage: prod
+  stage: ${opt:stage, 'dev'}
   lambdaHashingVersion: '20201221'
   apiGateway:
     shouldStartNameWithService: true
 
 plugins:
   - serverless-webpack
+  - serverless-dotenv-plugin
   - serverless-offline
 
 custom:
   webpack:
     includeModules: true
+    packager: 'yarn'
+    packagerOptions:
+      noFrozenLockfile: true
+      scripts:
+        - prisma generate
   serverless-offline:
     noPrependStageInUrl: true
 

@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const path = require('path');
 const nodeExternals = require('webpack-node-externals');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 const slsw = require('serverless-webpack');
 
 module.exports = {
+  mode: 'none',
   target: 'node',
   entry: slsw.lib.entries,
-  mode: process.env.NODE_ENV === 'dev' ? 'development' : 'production',
   externals: [nodeExternals()],
   resolve: {
     extensions: ['.ts', '.js'],
@@ -20,6 +21,7 @@ module.exports = {
       },
     ],
   },
+  plugins: [new CopyWebpackPlugin({ patterns: ['./prisma/schema.prisma'] })],
   output: {
     libraryTarget: 'commonjs',
     filename: '[name].js',
