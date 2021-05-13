@@ -1,4 +1,4 @@
-service: 'openapi-discount'
+service: 'coreservice-payments'
 useDotenv: false
 
 provider:

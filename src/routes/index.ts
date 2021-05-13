@@ -18,6 +18,7 @@ export function getRouter(): Application {
   router.use(logging);
   router.use(express.json());
   router.use(express.urlencoded({ extended: true }));
+  router.use('/legacy', getLegacyRouter());
 
   router.get(
     '/',
