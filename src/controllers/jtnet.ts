@@ -57,8 +57,8 @@ export class Jtnet {
     const schema = Joi.object({
       billingKey: Joi.string().required(),
       amount: Joi.number().required(),
-      realname: Joi.string().required(),
-      phone: Joi.string().required(),
+      realname: Joi.string().allow('').required(),
+      phone: Joi.string().allow('').required(),
       paymentKeyId: Joi.string().uuid().required(),
     });
 
