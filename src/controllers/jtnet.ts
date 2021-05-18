@@ -50,12 +50,14 @@ export class Jtnet {
 
   public static async invokeBilling(props: {
     billingKey: string;
+    productName: string;
     amount: number;
     realname: string;
     phone: string;
   }): Promise<string> {
     const schema = Joi.object({
       billingKey: Joi.string().required(),
+      productName: Joi.string().optional(),
       amount: Joi.number().required(),
       realname: Joi.string().allow('').required(),
       phone: Joi.string().allow('').required(),
@@ -63,13 +65,8 @@ export class Jtnet {
     });
 
     const client = this.getClient();
-    const {
-      billingKey,
-      amount,
-      realname,
-      phone,
-      paymentKeyId,
-    } = await schema.validateAsync(props);
+    const { billingKey, productName, amount, realname, phone, paymentKeyId } =
+      await schema.validateAsync(props);
     const [primaryPaymentKey, paymentKey] = await Promise.all([
       this.getPrimaryPaymentKey(),
       this.getPaymentKey(paymentKeyId),
@@ -83,6 +80,7 @@ export class Jtnet {
           api_key: primaryPaymentKey.secretKey,
           sub_mid: paymentKey.identity,
           sub_mid_key: paymentKey.secretKey,
+          goods_nm: productName,
           card_token: billingKey,
           amt: amount,
           buyer_name: realname,
