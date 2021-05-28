@@ -4,19 +4,32 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-1.0.x"]
 }
 
 model PaymentKeyModel {
   paymentKeyId String @id @default(uuid())
-  description String
+  description  String
 
-  primary Boolean
-  identity String
+  primary   Boolean
+  identity  String
   secretKey String
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+model CardModel {
+  cardId String @id @default(uuid())
+
+  userId     String
+  orderBy    Int
+  cardName   String
+  billingKey String
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 }

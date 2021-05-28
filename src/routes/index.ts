@@ -2,8 +2,19 @@ import cors from 'cors';
 import express, { Application } from 'express';
 import morgan from 'morgan';
 import os from 'os';
-import { InternalError, logger, OPCODE, Wrapper } from '..';
-import { getLegacyRouter } from './legacy';
+import {
+  getCardsRouter,
+  getLegacyRouter,
+  InternalError,
+  logger,
+  OPCODE,
+  UserMiddleware,
+  Wrapper,
+} from '..';
+import { getRecordsRouter } from './records';
+
+export * from './cards';
+export * from './legacy';
 
 export function getRouter(): Application {
   const router = express();
@@ -19,6 +30,7 @@ export function getRouter(): Application {
   router.use(express.json());
   router.use(express.urlencoded({ extended: true }));
   router.use('/legacy', getLegacyRouter());
+  router.use('/cards', UserMiddleware(), getCardsRouter());
 
   router.get(
     '/',
