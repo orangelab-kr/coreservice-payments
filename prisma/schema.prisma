@@ -16,6 +16,8 @@ model PaymentKeyModel {
   identity  String
   secretKey String
 
+  records RecordModel[]
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -28,6 +30,38 @@ model CardModel {
   orderBy    Int
   cardName   String
   billingKey String
+
+  records RecordModel[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+model RecordModel {
+  recordId String @id @default(uuid())
+
+  userId String
+
+  cardId String? // If the user deleted the card, it could be null.
+  card   CardModel? @relation(fields: [cardId], references: [cardId])
+
+  paymentKeyId String
+  paymentKey   PaymentKeyModel @relation(fields: [paymentKeyId], references: [paymentKeyId])
+
+  name        String // Ex. HI030 (이용료, 패널티)
+  amount      Int
+  description String @default("")
+
+  tid String
+
+  refundedAt DateTime?
+  reason     String?
+
+  processedAt DateTime? // 결제 성공 시점
+  retiredAt   DateTime? // 재시도 시점
+
+  properties Json?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

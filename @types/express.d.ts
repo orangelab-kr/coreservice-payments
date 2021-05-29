@@ -8,6 +8,7 @@ declare global {
       sessionId: string;
       user: UserModel;
       card: CardModel;
+      record: RecordModel;
     }
   }
 }

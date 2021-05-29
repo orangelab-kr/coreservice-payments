@@ -1,4 +1,4 @@
-import { PaymentKeyModel } from '@prisma/client';
+import { PaymentKeyModel, RecordModel } from '@prisma/client';
 import dayjs from 'dayjs';
 import got, { Got } from 'got';
 import { Database, InternalError, Joi, OPCODE } from '../tools';
@@ -97,6 +97,51 @@ export class Jtnet {
     }
 
     return res.tid;
+  }
+
+  public static async refundBilling(record: RecordModel): Promise<void> {
+    const client = this.getClient();
+    const { paymentKeyId, amount, tid } = record;
+    const { identity, secretKey } = await this.getPaymentKey(paymentKeyId);
+    const res = await client
+      .post({
+        url: 'refunds',
+        form: {
+          cancel_pw: '0000',
+          cancel_amt: amount,
+          mid: identity,
+          api_key: secretKey,
+          partial_cancel: 0,
+          tid,
+        },
+      })
+      .json<any>();
+
+    if (!['0000', '2013'].includes(res.result_cd)) {
+      throw new InternalError(`결제를 취소할 수 없습니다. ${res.result_msg}`);
+    }
+  }
+
+  public static async revokeBilling(billingKey: string): Promise<void> {
+    const client = this.getClient();
+    const paymentKey = await this.getPrimaryPaymentKey();
+    const res = await client
+      .post({
+        url: 'del_billkey',
+        form: {
+          mid: paymentKey.identity,
+          api_key: paymentKey.secretKey,
+          card_token: billingKey,
+        },
+      })
+      .json<any>();
+
+    if (res.result_cd !== '0000') {
+      throw new InternalError(
+        `카드를 만료시킬 수 없습니다. ${res.result_msg}`,
+        OPCODE.ERROR
+      );
+    }
   }
 
   public static async createBillingKey(props: {

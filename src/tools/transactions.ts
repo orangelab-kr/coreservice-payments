@@ -3,8 +3,8 @@ import { Database } from '.';
 
 const { prisma } = Database;
 
-type PrismaPromiseResult = PrismaPromise<any>;
-type PrismaPromiseOnce = Promise<() => PrismaPromiseResult>;
+export type PrismaPromiseResult = PrismaPromise<any>;
+export type PrismaPromiseOnce = Promise<() => PrismaPromiseResult>;
 
 // This is $$$ transactions (first promise all then prisma transactions)
 export async function $$$<T extends PrismaPromiseOnce>(

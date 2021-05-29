@@ -5,16 +5,17 @@ import os from 'os';
 import {
   getCardsRouter,
   getLegacyRouter,
+  getRecordsRouter,
   InternalError,
   logger,
   OPCODE,
   UserMiddleware,
   Wrapper,
 } from '..';
-import { getRecordsRouter } from './records';
 
 export * from './cards';
 export * from './legacy';
+export * from './records';
 
 export function getRouter(): Application {
   const router = express();
@@ -31,6 +32,7 @@ export function getRouter(): Application {
   router.use(express.urlencoded({ extended: true }));
   router.use('/legacy', getLegacyRouter());
   router.use('/cards', UserMiddleware(), getCardsRouter());
+  router.use('/records', UserMiddleware(), getRecordsRouter());
 
   router.get(
     '/',
