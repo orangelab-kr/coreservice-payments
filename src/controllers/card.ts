@@ -1,5 +1,5 @@
-import { CardModel, Prisma, PrismaPromise, RecordModel } from '.prisma/client';
-import { Joi, OPCODE, Jtnet, UserModel, $$$, InternalError } from '..';
+import { CardModel, Prisma, PrismaPromise } from '@prisma/client';
+import { $$$, InternalError, Joi, Jtnet, OPCODE, UserModel } from '..';
 import { Database } from '../tools';
 
 const { prisma } = Database;
@@ -29,12 +29,23 @@ export class Card {
 
   public static async getCard(
     user: UserModel,
-    cardId: string
+    cardId: string,
+    showBillingKey = false
   ): Promise<() => PrismaPromise<CardModel | null>> {
     const { userId } = user;
     return () =>
       prisma.cardModel.findFirst({
         where: { userId, cardId },
+        select: {
+          cardId: true,
+          userId: true,
+          orderBy: true,
+          cardName: true,
+          billingKey: showBillingKey,
+          createdAt: true,
+          updatedAt: true,
+          deletedAt: true,
+        },
       });
   }
 
@@ -73,9 +84,10 @@ export class Card {
 
   public static async getCardOrThrow(
     user: UserModel,
-    cardId: string
+    cardId: string,
+    showBillingKey = false
   ): Promise<CardModel> {
-    const card = await $$$(this.getCard(user, cardId));
+    const card = await $$$(this.getCard(user, cardId, showBillingKey));
     if (!card) {
       throw new InternalError('카드를 찾을 수 없습니다.', OPCODE.NOT_FOUND);
     }

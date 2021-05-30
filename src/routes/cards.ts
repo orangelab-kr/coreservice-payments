@@ -31,7 +31,7 @@ export function getCardsRouter() {
 
   router.delete(
     '/:cardId',
-    CardMiddleware(),
+    CardMiddleware(true),
     Wrapper(async (req, res) => {
       const card = await Card.revokeCard(req.user, req.card);
       res.json({ opcode: OPCODE.SUCCESS, card });
