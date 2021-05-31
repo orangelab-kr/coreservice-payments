@@ -4,6 +4,7 @@ import { Callback, InternalError, Joi, logger, OPCODE, Wrapper } from '../..';
 
 export * from './record';
 export * from './user';
+export * from './coupon';
 
 export function InternalMiddleware(): Callback {
   return Wrapper(async (req, res, next) => {
