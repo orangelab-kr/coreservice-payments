@@ -4,9 +4,11 @@ import morgan from 'morgan';
 import os from 'os';
 import {
   getCardsRouter,
+  getInternalRouter,
   getLegacyRouter,
   getRecordsRouter,
   InternalError,
+  InternalMiddleware,
   logger,
   OPCODE,
   UserMiddleware,
@@ -14,6 +16,7 @@ import {
 } from '..';
 
 export * from './cards';
+export * from './internal';
 export * from './legacy';
 export * from './records';
 
@@ -33,6 +36,7 @@ export function getRouter(): Application {
   router.use('/legacy', getLegacyRouter());
   router.use('/cards', UserMiddleware(), getCardsRouter());
   router.use('/records', UserMiddleware(), getRecordsRouter());
+  router.use('/internal', InternalMiddleware(), getInternalRouter());
 
   router.get(
     '/',

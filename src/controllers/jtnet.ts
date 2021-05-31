@@ -54,6 +54,7 @@ export class Jtnet {
     amount: number;
     realname: string;
     phone: string;
+    paymentKeyId?: string | undefined;
   }): Promise<string> {
     const schema = Joi.object({
       billingKey: Joi.string().required(),
@@ -61,16 +62,16 @@ export class Jtnet {
       amount: Joi.number().required(),
       realname: Joi.string().allow('').required(),
       phone: Joi.string().allow('').required(),
-      paymentKeyId: Joi.string().uuid().required(),
+      paymentKeyId: Joi.string().uuid().optional(),
     });
 
     const client = this.getClient();
     const { billingKey, productName, amount, realname, phone, paymentKeyId } =
       await schema.validateAsync(props);
-    const [primaryPaymentKey, paymentKey] = await Promise.all([
-      this.getPrimaryPaymentKey(),
-      this.getPaymentKey(paymentKeyId),
-    ]);
+    const primaryPaymentKey = await this.getPrimaryPaymentKey();
+
+    let paymentKey = primaryPaymentKey;
+    if (paymentKeyId) paymentKey = await this.getPaymentKey(paymentKeyId);
 
     const res = await client
       .post({
@@ -102,6 +103,10 @@ export class Jtnet {
   public static async refundBilling(record: RecordModel): Promise<void> {
     const client = this.getClient();
     const { paymentKeyId, amount, tid } = record;
+    if (!paymentKeyId) {
+      throw new InternalError('결제되지 않은 결제 내역입니다.', OPCODE.ERROR);
+    }
+
     const { identity, secretKey } = await this.getPaymentKey(paymentKeyId);
     const res = await client
       .post({
@@ -117,7 +122,7 @@ export class Jtnet {
       })
       .json<any>();
 
-    if (!['0000', '2013'].includes(res.result_cd)) {
+    if (!['2001', '2013'].includes(res.result_cd)) {
       throw new InternalError(`결제를 취소할 수 없습니다. ${res.result_msg}`);
     }
   }

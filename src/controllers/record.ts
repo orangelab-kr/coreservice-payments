@@ -1,8 +1,12 @@
-import { CardModel, Prisma, RecordModel } from '@prisma/client';
+import {
+  CardModel,
+  PaymentKeyModel,
+  Prisma,
+  RecordModel,
+} from '@prisma/client';
 import {
   $$$,
   Card,
-  Database,
   InternalError,
   Joi,
   Jtnet,
@@ -10,6 +14,7 @@ import {
   PrismaPromiseOnce,
   UserModel,
 } from '..';
+import { Database } from '../tools';
 
 const { prisma } = Database;
 
@@ -18,19 +23,38 @@ export class Record {
     user: UserModel,
     props: {
       priorityCardId?: string;
+      paymentKeyId?: string;
       amount: number;
       name: string;
       description?: string;
       required?: boolean;
     }
-  ): Promise<RecordModel> {
+  ): Promise<() => Prisma.Prisma__RecordModelClient<RecordModel>> {
+    const {
+      amount,
+      name,
+      description,
+      priorityCardId,
+      required,
+      paymentKeyId,
+    } = props;
+
     const transactions: PrismaPromiseOnce[] = [];
-    const { amount, name, description, priorityCardId, required } = props;
     transactions.push(this.createRecord(user, { amount, name, description }));
-    if (priorityCardId) transactions.push(Card.getCard(user, priorityCardId));
+    if (priorityCardId) {
+      transactions.push(Card.getCard(user, priorityCardId, true));
+    }
+
+    let paymentKey: PaymentKeyModel | undefined;
     const [record, priorityCard] = await $$$(transactions);
-    await this.invokePayment({ user, record, priorityCard, required });
-    return record;
+    if (paymentKeyId) paymentKey = await Jtnet.getPaymentKey(paymentKeyId);
+    return this.invokePayment({
+      user,
+      record,
+      priorityCard,
+      required,
+      paymentKey,
+    });
   }
 
   public static async createRecord(
@@ -65,30 +89,34 @@ export class Record {
       });
   }
 
-  private static async tryAllPayment(
-    user: UserModel,
-    record: RecordModel,
-    priorityCard?: CardModel | undefined
-  ): Promise<{ card: CardModel | undefined; tid: string | undefined }> {
+  private static async tryPayment(props: {
+    user: UserModel;
+    record: RecordModel;
+    priorityCard?: CardModel | undefined;
+    paymentKey?: PaymentKeyModel | undefined;
+  }): Promise<{ card: CardModel | undefined; tid: string | undefined }> {
     let tid: string | undefined;
     let card: CardModel | undefined;
 
+    const { user, record, priorityCard, paymentKey } = props;
     const { name, amount } = record;
     const { realname, phoneNo } = user;
+    const paymentKeyId = paymentKey && paymentKey.paymentKeyId;
     const cards = await $$$(Card.getCards(user, true));
-    for (let i = -1; i <= cards.length + 1; i++) {
+    for (let i = -1; i <= cards.length - 1; i++) {
       if (i <= -1 && !priorityCard) continue;
-      const { billingKey } = i <= -1 ? priorityCard : cards[i];
+      const currentCard = i <= -1 ? priorityCard : cards[i];
       try {
         tid = await Jtnet.invokeBilling({
-          billingKey,
+          billingKey: currentCard.billingKey,
           productName: name,
-          amount,
-          realname,
           phone: phoneNo,
+          paymentKeyId,
+          realname,
+          amount,
         });
 
-        card = cards[i];
+        card = currentCard;
         break;
       } catch (err) {}
     }
@@ -100,11 +128,19 @@ export class Record {
     user: UserModel;
     record: RecordModel;
     priorityCard?: CardModel;
+    paymentKey?: PaymentKeyModel | undefined;
     required?: boolean;
-  }): Promise<any> {
-    const { user, record, required, priorityCard } = props;
+    onlyPriorityCard?: boolean;
+  }): Promise<() => Prisma.Prisma__RecordModelClient<RecordModel>> {
+    const { user, record, required, priorityCard, paymentKey } = props;
     const { recordId, amount, name, description } = record;
-    const { card, tid } = await this.tryAllPayment(user, record, priorityCard);
+    const { card, tid } = await this.tryPayment({
+      user,
+      record,
+      priorityCard,
+      paymentKey,
+    });
+
     if (required && !card) {
       throw new InternalError(
         '결제 가능한 카드가 없습니다.',
@@ -116,6 +152,7 @@ export class Record {
     const retiredAt = new Date();
     const cardId = card && card.cardId;
     const processedAt = card ? new Date() : null;
+    const paymentKeyId = paymentKey && paymentKey.paymentKeyId;
     return () =>
       prisma.recordModel.update({
         where: { recordId },
@@ -126,6 +163,7 @@ export class Record {
           tid,
           name,
           description,
+          paymentKeyId,
           processedAt,
           retiredAt,
         },
@@ -223,7 +261,23 @@ export class Record {
     return record;
   }
 
-  public static async refundRecord(record: RecordModel): Promise<void> {
-    await Jtnet.refundBilling(record);
+  public static async refundRecord(
+    record: RecordModel,
+    reason?: string
+  ): Promise<() => Prisma.Prisma__RecordModelClient<RecordModel>> {
+    const { recordId, refundedAt, processedAt } = record;
+    if (refundedAt) {
+      throw new InternalError('이미 환불된 거래입니다.', OPCODE.ALREADY_EXISTS);
+    }
+
+    if (processedAt) await Jtnet.refundBilling(record);
+    return () =>
+      prisma.recordModel.update({
+        where: { recordId },
+        data: {
+          refundedAt: new Date(),
+          reason,
+        },
+      });
   }
 }
