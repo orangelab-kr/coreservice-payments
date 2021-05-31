@@ -9,6 +9,7 @@ declare global {
       user: UserModel;
       card: CardModel;
       record: RecordModel;
+      coupon: CouponModel;
       internal: {
         sub: string;
         iss: string;
@@ -18,6 +19,7 @@ declare global {
         sessionId: string;
         user: UserModel;
         record: RecordModel;
+        coupon: CouponModel;
       };
     }
   }

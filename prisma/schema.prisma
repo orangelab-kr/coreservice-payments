@@ -67,3 +67,37 @@ model RecordModel {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 }
+
+
+model CouponGroupModel {
+  couponGroupId String @id @default(uuid())
+
+  code            String
+  name String
+  description String
+
+  discountGroupId String?
+  limit Int?  
+
+  coupons CouponModel[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+model CouponModel {
+  couponId String @id @default(uuid())
+
+  userId String
+  discountId String?
+
+  couponGroupId String
+  couponGroup   CouponGroupModel @relation(fields: [couponGroupId], references: [couponGroupId])
+
+  usedAt    DateTime?
+  expiredAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
