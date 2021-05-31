@@ -13,12 +13,14 @@ import {
   OPCODE,
   UserMiddleware,
   Wrapper,
+  getCouponsRouter,
 } from '..';
 
 export * from './cards';
 export * from './internal';
 export * from './legacy';
 export * from './records';
+export * from './coupons';
 
 export function getRouter(): Application {
   const router = express();
@@ -36,6 +38,7 @@ export function getRouter(): Application {
   router.use('/legacy', getLegacyRouter());
   router.use('/cards', UserMiddleware(), getCardsRouter());
   router.use('/records', UserMiddleware(), getRecordsRouter());
+  router.use('/coupons', UserMiddleware(), getCouponsRouter());
   router.use('/internal', InternalMiddleware(), getInternalRouter());
 
   router.get(
