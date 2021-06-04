@@ -64,7 +64,6 @@ export function getAccountsClient(): Got {
           err.message = message;
           return err;
         },
-        },
       ],
     },
   });

@@ -34,7 +34,6 @@ export function getPlatformClient(): Got {
           err.message = message;
           return err;
         },
-        },
       ],
     },
   });

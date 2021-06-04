@@ -4,23 +4,25 @@ import morgan from 'morgan';
 import os from 'os';
 import {
   getCardsRouter,
+  getCouponsRouter,
   getInternalRouter,
   getLegacyRouter,
   getRecordsRouter,
+  getWebhookRouter,
   InternalError,
   InternalMiddleware,
   logger,
   OPCODE,
   UserMiddleware,
   Wrapper,
-  getCouponsRouter,
 } from '..';
 
 export * from './cards';
+export * from './coupons';
 export * from './internal';
 export * from './legacy';
 export * from './records';
-export * from './coupons';
+export * from './webhook';
 
 export function getRouter(): Application {
   const router = express();
@@ -40,6 +42,7 @@ export function getRouter(): Application {
   router.use('/records', UserMiddleware(), getRecordsRouter());
   router.use('/coupons', UserMiddleware(), getCouponsRouter());
   router.use('/internal', InternalMiddleware(), getInternalRouter());
+  router.use('/webhook', getWebhookRouter());
 
   router.get(
     '/',
