@@ -26,15 +26,14 @@ export function getPlatformClient(): Got {
     hooks: {
       beforeError: [
         (err: any): any => {
-          err.name = 'InternalError';
-          if (!err.response || !err.response.body) {
-            err.message = '알 수 없는 오류가 발생하였습니다.';
-            return err;
-          }
-
+          if (!err.response || !err.response.body) return err;
           const { opcode, message } = JSON.parse(<string>err.response.body);
-          err = { ...err, opcode, message };
+
+          err.name = 'InternalError';
+          err.opcode = opcode;
+          err.message = message;
           return err;
+        },
         },
       ],
     },
