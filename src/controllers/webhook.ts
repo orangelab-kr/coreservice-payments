@@ -7,6 +7,7 @@ import {
   RecordProperties,
   UserModel,
 } from '..';
+import { getPlatformClient } from '../tools';
 
 export interface WebhookPayment {
   requestId: string;
@@ -166,7 +167,11 @@ export interface WebhookRefund {
 
 export class Webhook {
   public static async onPayment(payload: WebhookPayment): Promise<void> {
-    const { userId, kickboardCode, startedAt } = payload.data.ride;
+    const {
+      description,
+      paymentId,
+      ride: { rideId, userId, kickboardCode },
+    } = payload.data;
     const { user } = await getAccountsClient()
       .get(`users/${userId}`)
       .json<{ opcode: OPCODE; user: UserModel }>();
@@ -176,24 +181,24 @@ export class Webhook {
     };
 
     const type = payload.data.paymentType === 'SERVICE' ? '이용료' : '추가금';
-    const minutes = dayjs(startedAt).diff(dayjs(), 'minutes');
     await $$$(
       Record.createThenPayRecord(user, {
         properties,
         amount: payload.data.amount,
         name: `[${type}] ${kickboardCode} 킥보드`,
-        description:
-          payload.data.paymentType === 'SERVICE'
-            ? `${minutes}만큼 ${kickboardCode} 킥보드를 이용했어요.`
-            : '이용이 불가능한 곳에 반납을 하여 추가금액이 발생했어요.',
+        description,
       })
+    );
+
+    await getPlatformClient().get(
+      `ride/rides/${rideId}/payments/${paymentId}/process`
     );
   }
 
   public static async onRefund(payload: WebhookPayment): Promise<void> {
     const {
       paymentId,
-      ride: { userId },
+      ride: { rideId, userId },
     } = payload.data;
     const { user } = await getAccountsClient()
       .get(`users/${userId}`)
@@ -201,5 +206,8 @@ export class Webhook {
 
     const record = await Record.getRecordByPaymentIdOrThrow(user, paymentId);
     await $$$(Record.refundRecord(record));
+    await getPlatformClient().get(
+      `ride/rides/${rideId}/payments/${paymentId}/process`
+    );
   }
 }
