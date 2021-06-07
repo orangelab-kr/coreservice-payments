@@ -18,6 +18,23 @@ import { Database } from '../tools';
 
 const { prisma } = Database;
 
+export interface RecordProperties {
+  openapi?: {
+    paymentId: string;
+    description: string;
+    platformId: string;
+    franchiseId: string;
+    paymentType: string;
+    amount: number;
+    rideId: string;
+    refundedAt: null;
+    processedAt: null;
+    createdAt: Date;
+    updatedAt: Date;
+    deletedAt: null;
+  };
+}
+
 export class Record {
   public static async createThenPayRecord(
     user: UserModel,
@@ -28,6 +45,7 @@ export class Record {
       name: string;
       description?: string;
       required?: boolean;
+      properties?: RecordProperties;
     }
   ): Promise<() => Prisma.Prisma__RecordModelClient<RecordModel>> {
     const {
@@ -37,10 +55,14 @@ export class Record {
       priorityCardId,
       required,
       paymentKeyId,
+      properties,
     } = props;
 
     const transactions: PrismaPromiseOnce[] = [];
-    transactions.push(this.createRecord(user, { amount, name, description }));
+    transactions.push(
+      this.createRecord(user, { amount, name, description, properties })
+    );
+
     if (priorityCardId) {
       transactions.push(Card.getCard(user, priorityCardId, true));
     }
@@ -63,6 +85,7 @@ export class Record {
       amount: number;
       name: string;
       description?: string;
+      properties?: RecordProperties;
     }
   ): Promise<() => Prisma.Prisma__RecordModelClient<RecordModel>> {
     const schema = Joi.object({
@@ -70,12 +93,12 @@ export class Record {
       amount: Joi.number().required(),
       name: Joi.string().required(),
       description: Joi.string().allow('').optional(),
+      properties: Joi.object().optional(),
     });
 
     const { userId } = user;
-    const { cardId, amount, name, description } = await schema.validateAsync(
-      props
-    );
+    const { cardId, amount, name, description, properties } =
+      await schema.validateAsync(props);
 
     return () =>
       prisma.recordModel.create({
@@ -85,6 +108,7 @@ export class Record {
           amount,
           name,
           description,
+          properties,
         },
       });
   }
@@ -252,6 +276,38 @@ export class Record {
     recordId: string
   ): Promise<RecordModel> {
     const record = await $$$(this.getRecord(user, recordId));
+    if (!record) {
+      throw new InternalError(
+        '결제 내역을 찾을 수 없습니다.',
+        OPCODE.NOT_FOUND
+      );
+    }
+
+    return record;
+  }
+
+  public static async getRecordByPaymentId(
+    user: UserModel,
+    paymentId: string
+  ): Promise<() => Prisma.Prisma__RecordModelClient<RecordModel | null>> {
+    const { userId } = user;
+    return () =>
+      prisma.recordModel.findFirst({
+        where: {
+          userId,
+          properties: {
+            path: '$.openapi.paymentId',
+            equals: paymentId,
+          },
+        },
+      });
+  }
+
+  public static async getRecordByPaymentIdOrThrow(
+    user: UserModel,
+    paymentId: string
+  ): Promise<RecordModel> {
+    const record = await $$$(this.getRecordByPaymentId(user, paymentId));
     if (!record) {
       throw new InternalError(
         '결제 내역을 찾을 수 없습니다.',

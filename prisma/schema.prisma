@@ -4,8 +4,9 @@ datasource db {
 }
 
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "rhel-openssl-1.0.x"]
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native", "rhel-openssl-1.0.x"]
+  previewFeatures = ["filterJson"]
 }
 
 model PaymentKeyModel {
@@ -68,16 +69,15 @@ model RecordModel {
   deletedAt DateTime?
 }
 
-
 model CouponGroupModel {
   couponGroupId String @id @default(uuid())
 
-  code            String
-  name String
+  code        String
+  name        String
   description String
 
   discountGroupId String?
-  limit Int?  
+  limit           Int?
 
   coupons CouponModel[]
 
@@ -89,7 +89,7 @@ model CouponGroupModel {
 model CouponModel {
   couponId String @id @default(uuid())
 
-  userId String
+  userId     String
   discountId String?
 
   couponGroupId String

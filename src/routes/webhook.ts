@@ -13,5 +13,13 @@ export function getWebhookRouter() {
     })
   );
 
+  router.post(
+    '/refund',
+    Wrapper(async (req, res) => {
+      await Webhook.onRefund(req.body);
+      res.json({ opcode: OPCODE.SUCCESS });
+    })
+  );
+
   return router;
 }
