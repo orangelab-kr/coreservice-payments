@@ -93,7 +93,7 @@ export class Record {
     user: UserModel;
     record: RecordModel;
     priorityCard?: CardModel | undefined;
-    paymentKey?: PaymentKeyModel | undefined;
+    paymentKey: PaymentKeyModel;
   }): Promise<{ card: CardModel | undefined; tid: string | undefined }> {
     let tid: string | undefined;
     let card: CardModel | undefined;
@@ -101,7 +101,7 @@ export class Record {
     const { user, record, priorityCard, paymentKey } = props;
     const { name, amount } = record;
     const { realname, phoneNo } = user;
-    const paymentKeyId = paymentKey && paymentKey.paymentKeyId;
+    const { paymentKeyId } = paymentKey;
     const cards = await $$$(Card.getCards(user, true));
     for (let i = -1; i <= cards.length - 1; i++) {
       if (i <= -1 && !priorityCard) continue;
@@ -132,8 +132,9 @@ export class Record {
     required?: boolean;
     onlyPriorityCard?: boolean;
   }): Promise<() => Prisma.Prisma__RecordModelClient<RecordModel>> {
-    const { user, record, required, priorityCard, paymentKey } = props;
+    const { user, record, required, priorityCard } = props;
     const { recordId, amount, name, description } = record;
+    const paymentKey = props.paymentKey || (await Jtnet.getPrimaryPaymentKey());
     const { card, tid } = await this.tryPayment({
       user,
       record,

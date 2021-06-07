@@ -68,6 +68,7 @@ export class Jtnet {
     const client = this.getClient();
     const { billingKey, productName, amount, realname, phone, paymentKeyId } =
       await schema.validateAsync(props);
+    // Legacy 대응 -> 추후에는 무조건 PaymentKey 는 Required 임
     const primaryPaymentKey = await this.getPrimaryPaymentKey();
 
     let paymentKey = primaryPaymentKey;
