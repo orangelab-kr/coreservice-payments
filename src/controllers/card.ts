@@ -17,7 +17,7 @@ export class Card {
 
     if (records.length > 0) {
       throw new InternalError(
-        '결제 실패 내역이 있습니다. 결제 완료 후 이용할 수 있습니다.',
+        '결제 실패 내역이 있습니다. 결제 완료 후 진행해주세요.',
         OPCODE.ERROR
       );
     }

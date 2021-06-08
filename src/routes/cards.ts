@@ -1,6 +1,5 @@
 import { Router } from 'express';
-import { Card, OPCODE, Wrapper, $$$ } from '..';
-import { CardMiddleware } from '../middlewares';
+import { $$$, Card, CardMiddleware, OPCODE, Wrapper } from '..';
 
 export function getCardsRouter() {
   const router = Router();
@@ -33,6 +32,7 @@ export function getCardsRouter() {
     '/:cardId',
     CardMiddleware(true),
     Wrapper(async (req, res) => {
+      await Card.checkReady(req.user);
       const card = await Card.revokeCard(req.user, req.card);
       res.json({ opcode: OPCODE.SUCCESS, card });
     })

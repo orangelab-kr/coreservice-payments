@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { OPCODE, Record, RecordMiddleware, Wrapper } from '..';
+import { OPCODE, Record, RecordMiddleware, Wrapper, $$$ } from '..';
 
 export function getRecordsRouter() {
   const router = Router();
@@ -19,6 +19,16 @@ export function getRecordsRouter() {
     Wrapper(async (req, res) => {
       const { record } = req;
       res.json({ opcode: OPCODE.SUCCESS, record });
+    })
+  );
+
+  router.get(
+    '/:recordId/retry',
+    RecordMiddleware(),
+    Wrapper(async (req, res) => {
+      const { record, user } = req;
+      await $$$(Record.retryPayment(user, record));
+      res.json({ opcode: OPCODE.SUCCESS });
     })
   );
 

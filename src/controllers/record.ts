@@ -134,6 +134,40 @@ export class Record {
       });
   }
 
+  // 결제 재시도 후 데이터베이스 업데이트
+  public static async retryPayment(user: UserModel, record: RecordModel) {
+    if (record.processedAt) {
+      throw new InternalError(
+        '이미 결제된 결제 내역입니다.',
+        OPCODE.ALREADY_EXISTS
+      );
+    }
+
+    const retiredAt = new Date();
+    const { recordId } = record;
+    await prisma.recordModel.update({
+      where: { recordId },
+      data: { retiredAt },
+    });
+
+    const { card, tid } = await this.tryPayment({ user, record });
+    if (!card) {
+      throw new InternalError(
+        '결제 가능한 카드가 없습니다.',
+        OPCODE.ACCESS_DENIED
+      );
+    }
+
+    const { cardId } = card;
+    const processedAt = new Date();
+    await this.setOpenApiProcessed(record);
+    return () =>
+      prisma.recordModel.update({
+        where: { recordId },
+        data: { cardId, tid, processedAt },
+      });
+  }
+
   // 실질적으로 결제를 진행하는 프로세스
   private static async tryPayment(props: {
     user: UserModel;

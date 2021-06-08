@@ -39,6 +39,16 @@ export function getInternalRecordsRouter() {
     })
   );
 
+  router.get(
+    '/:recordId/retry',
+    InternalRecordMiddleware(),
+    Wrapper(async (req, res) => {
+      const { record, user } = req.internal;
+      await $$$(Record.retryPayment(user, record));
+      res.json({ opcode: OPCODE.SUCCESS });
+    })
+  );
+
   router.post(
     '/:recordId/refund',
     InternalRecordMiddleware(),
@@ -46,7 +56,6 @@ export function getInternalRecordsRouter() {
       const {
         body: { reason },
         internal: { record: beforeRecord },
-        
       } = req;
 
       const record = await $$$(Record.refundRecord(beforeRecord, reason));
