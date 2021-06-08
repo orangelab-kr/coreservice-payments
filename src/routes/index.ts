@@ -3,6 +3,7 @@ import express, { Application } from 'express';
 import morgan from 'morgan';
 import os from 'os';
 import {
+  Card,
   getCardsRouter,
   getCouponsRouter,
   getInternalRouter,
@@ -52,6 +53,15 @@ export function getRouter(): Application {
         mode: process.env.NODE_ENV,
         cluster: hostname,
       });
+    })
+  );
+
+  router.get(
+    '/ready',
+    UserMiddleware(),
+    Wrapper(async (req, res) => {
+      await Card.checkReady(req.user);
+      res.json({ opcode: OPCODE.SUCCESS });
     })
   );
 

@@ -1,10 +1,28 @@
 import { CardModel, Prisma, PrismaPromise } from '@prisma/client';
-import { $$$, InternalError, Joi, Jtnet, OPCODE, UserModel } from '..';
+import { $$$, InternalError, Joi, Jtnet, OPCODE, Record, UserModel } from '..';
 import { Database } from '../tools';
 
 const { prisma } = Database;
 
 export class Card {
+  public static async checkReady(user: UserModel): Promise<void> {
+    const [cards, records] = await $$$([
+      Card.getCards(user),
+      Record.getUnpaidRecord(user),
+    ]);
+
+    if (cards.length <= 0) {
+      throw new InternalError('카드를 등록해주세요.', OPCODE.NOT_FOUND);
+    }
+
+    if (records.length > 0) {
+      throw new InternalError(
+        '결제 실패 내역이 있습니다. 결제 완료 후 이용할 수 있습니다.',
+        OPCODE.ERROR
+      );
+    }
+  }
+
   public static async getCards(
     user: UserModel,
     showBillingKey = false

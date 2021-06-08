@@ -1,12 +1,15 @@
 import { Router } from 'express';
 import {
+  Card,
+  getInternalCouponsRouter,
   getInternalRecordsRouter,
   InternalUserMiddleware,
-  getInternalCouponsRouter,
+  Wrapper,
 } from '../..';
+import { OPCODE } from '../../tools';
 
-export * from './records';
 export * from './coupons';
+export * from './records';
 
 export function getInternalRouter() {
   const router = Router();
@@ -21,6 +24,15 @@ export function getInternalRouter() {
     '/:userId/coupons',
     InternalUserMiddleware(),
     getInternalCouponsRouter()
+  );
+
+  router.get(
+    '/:userId/ready',
+    InternalUserMiddleware(),
+    Wrapper(async (req, res) => {
+      await Card.checkReady(req.internal.user);
+      res.json({ opcode: OPCODE.SUCCESS });
+    })
   );
 
   return router;
