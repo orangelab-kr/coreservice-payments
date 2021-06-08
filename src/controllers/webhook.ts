@@ -169,8 +169,7 @@ export class Webhook {
   public static async onPayment(payload: WebhookPayment): Promise<void> {
     const {
       description,
-      paymentId,
-      ride: { rideId, userId, kickboardCode },
+      ride: { userId, kickboardCode },
     } = payload.data;
     const { user } = await getAccountsClient()
       .get(`users/${userId}`)
@@ -181,7 +180,7 @@ export class Webhook {
     };
 
     const type = payload.data.paymentType === 'SERVICE' ? '이용료' : '추가금';
-    await $$$(
+    const record = await $$$(
       Record.createThenPayRecord(user, {
         properties,
         amount: payload.data.amount,
@@ -190,9 +189,7 @@ export class Webhook {
       })
     );
 
-    await getPlatformClient().get(
-      `ride/rides/${rideId}/payments/${paymentId}/process`
-    );
+    await Record.setOpenApiProcessed(record);
   }
 
   public static async onRefund(payload: WebhookPayment): Promise<void> {
@@ -206,8 +203,6 @@ export class Webhook {
 
     const record = await Record.getRecordByPaymentIdOrThrow(user, paymentId);
     await $$$(Record.refundRecord(record));
-    await getPlatformClient().get(
-      `ride/rides/${rideId}/payments/${paymentId}/process`
-    );
+    await Record.setOpenApiProcessed(record);
   }
 }

@@ -47,8 +47,8 @@ model RecordModel {
   cardId String? // If the user deleted the card, it could be null.
   card   CardModel? @relation(fields: [cardId], references: [cardId])
 
-  paymentKeyId String?
-  paymentKey   PaymentKeyModel? @relation(fields: [paymentKeyId], references: [paymentKeyId])
+  paymentKeyId String
+  paymentKey   PaymentKeyModel @relation(fields: [paymentKeyId], references: [paymentKeyId])
 
   name        String // Ex. HI030 (이용료, 패널티)
   amount      Int
