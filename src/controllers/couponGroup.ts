@@ -28,31 +28,43 @@ interface OpenApiDiscountGroup {
   updatedAt: Date;
 }
 
+export interface CouponGroupProperties {
+  openapi?: {
+    discountGroupId: string;
+  };
+}
+
 export class CouponGroup {
   public static async createCouponGroup(props: {
     code: string;
     name: string;
     description: string;
-    discountGroupId: string;
+    properties: CouponGroupProperties;
   }): Promise<() => Prisma.Prisma__CouponGroupModelClient<CouponGroupModel>> {
     const schema = await Joi.object({
       code: Joi.string().required(),
       name: Joi.string().min(2).max(16).required(),
       description: Joi.string().default('').allow('').optional(),
-      discountGroupId: Joi.string().uuid().required(),
+      properties: Joi.object().optional(),
     });
 
-    const { code, name, description, discountGroupId } =
-      await schema.validateAsync(props);
+    const { code, name, description, properties } = await schema.validateAsync(
+      props
+    );
 
     await Promise.all([
       this.isUnusedCouponGroupNameOrThrow(name),
       this.isUnusedCouponGroupCodeOrThrow(code),
     ]);
 
-    await getPlatformClient()
-      .get(`discount/${discountGroupId}`)
-      .json<{ opcode: number; discountGroup: OpenApiDiscountGroup }>();
+    if (properties) {
+      const { openapi } = <CouponGroupProperties>properties;
+      if (openapi) {
+        await getPlatformClient()
+          .get(`discount/${openapi.discountGroupId}`)
+          .json<{ opcode: number; discountGroup: OpenApiDiscountGroup }>();
+      }
+    }
 
     return () =>
       prisma.couponGroupModel.create({
@@ -60,7 +72,7 @@ export class CouponGroup {
           code,
           name,
           description,
-          discountGroupId,
+          properties,
         },
       });
   }

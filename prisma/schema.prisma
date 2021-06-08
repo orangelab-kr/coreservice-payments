@@ -76,10 +76,10 @@ model CouponGroupModel {
   name        String
   description String
 
-  discountGroupId String?
-  limit           Int?
+  limit Int?
 
-  coupons CouponModel[]
+  coupons    CouponModel[]
+  properties Json?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -89,11 +89,11 @@ model CouponGroupModel {
 model CouponModel {
   couponId String @id @default(uuid())
 
-  userId     String
-  discountId String?
+  userId String
 
   couponGroupId String
   couponGroup   CouponGroupModel @relation(fields: [couponGroupId], references: [couponGroupId])
+  properties    Json?
 
   usedAt    DateTime?
   expiredAt DateTime?

@@ -195,7 +195,7 @@ export class Webhook {
   public static async onRefund(payload: WebhookPayment): Promise<void> {
     const {
       paymentId,
-      ride: { rideId, userId },
+      ride: { userId },
     } = payload.data;
     const { user } = await getAccountsClient()
       .get(`users/${userId}`)

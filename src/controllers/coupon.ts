@@ -1,5 +1,5 @@
 import { CouponModel, Prisma, PrismaPromise } from '@prisma/client';
-import { CouponGroup, Joi, UserModel } from '..';
+import { CouponGroup, CouponGroupProperties, Joi, UserModel } from '..';
 import {
   $$$,
   Database,
@@ -10,13 +10,20 @@ import {
 
 const { prisma } = Database;
 
-interface OpenApiDiscount {
+export interface OpenApiDiscount {
   discountId: string;
   discountGroupId: string;
   expiredAt: Date;
   usedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface CouponProperties {
+  openapi?: {
+    discountGroupId: string;
+    discountId: string;
+  };
 }
 
 export class Coupon {
@@ -98,31 +105,31 @@ export class Coupon {
   public static async modifyCoupon(
     coupon: CouponModel,
     props: {
-      discountId?: string;
       couponGroupId?: string;
       usedAt?: Date;
       expiredAt?: Date;
+      properties?: CouponProperties;
     }
   ): Promise<any> {
     const { couponId } = coupon;
     const schema = await Joi.object({
-      discountId: Joi.string().uuid().allow(null).optional(),
       couponGroupId: Joi.string().uuid().optional(),
       usedAt: Joi.date().allow(null).optional(),
       expiredAt: Joi.date().allow(null).optional(),
+      properties: Joi.object().optional(),
     });
 
-    const { discountId, couponGroupId, usedAt, expiredAt } =
+    const { properties, couponGroupId, usedAt, expiredAt } =
       await schema.validateAsync(props);
 
     return () =>
       prisma.couponModel.update({
         where: { couponId },
         data: {
-          discountId,
           couponGroupId,
           usedAt,
           expiredAt,
+          properties,
         },
       });
   }
@@ -133,7 +140,7 @@ export class Coupon {
   ): Promise<() => Prisma.Prisma__CouponModelClient<CouponModel>> {
     const { userId } = user;
     const couponGroup = await CouponGroup.getCouponGroupByCodeOrThrow(code);
-    const { couponGroupId, limit, discountGroupId } = couponGroup;
+    const { couponGroupId, limit } = couponGroup;
 
     if (limit) {
       const duplicateCount = await $$$(
@@ -149,19 +156,27 @@ export class Coupon {
     }
 
     let discount: OpenApiDiscount | undefined;
-    if (discountGroupId) {
+    const properties = <CouponGroupProperties>couponGroup.properties;
+    if (properties && properties.openapi) {
+      const { discountGroupId } = properties.openapi;
       discount = await this.generateDiscountId(discountGroupId);
     }
 
     const discountId = discount ? discount.discountId : null;
+    const discountGroupId = discount ? discount.discountGroupId : null;
     const expiredAt = discount ? new Date(discount.expiredAt) : null;
     return () =>
       prisma.couponModel.create({
         data: {
           userId,
           couponGroupId,
-          discountId,
           expiredAt,
+          properties: {
+            openapi: {
+              discountId,
+              discountGroupId,
+            },
+          },
         },
       });
   }
