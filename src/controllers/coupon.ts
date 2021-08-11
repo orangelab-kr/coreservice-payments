@@ -17,6 +17,25 @@ export interface OpenApiDiscount {
   usedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: null;
+  discountGroup: {
+    discountGroupId: string;
+    enabled: boolean;
+    name: string;
+    description: string;
+    remainingCount: number;
+    platformId: string;
+    ratioPriceDiscount: number;
+    staticPriceDiscount: number;
+    staticMinuteDiscount: number;
+    isSurchargeIncluded: boolean;
+    isStandardPriceIncluded: boolean;
+    isPerMinutePriceIncluded: boolean;
+    validity?: number;
+    createdAt: Date;
+    updatedAt: Date;
+    deletedAt: null;
+  };
 }
 
 export interface CouponProperties {
@@ -46,6 +65,7 @@ export class Coupon {
     const { userId } = user;
     return () =>
       prisma.couponModel.findFirst({
+        include: { couponGroup: true },
         where: { userId, couponId },
       });
   }
@@ -89,9 +109,11 @@ export class Coupon {
     };
 
     if (!showUsed) where.usedAt = null;
+    const include: Prisma.CouponModelInclude = { couponGroup: true };
     const [total, coupons] = await prisma.$transaction([
       prisma.couponModel.count({ where }),
       prisma.couponModel.findMany({
+        include,
         where,
         take,
         skip,
@@ -124,6 +146,7 @@ export class Coupon {
 
     return () =>
       prisma.couponModel.update({
+        include: { couponGroup: true },
         where: { couponId },
         data: {
           couponGroupId,
@@ -162,11 +185,12 @@ export class Coupon {
       discount = await this.generateDiscountId(discountGroupId);
     }
 
-    const discountId = discount ? discount.discountId : null;
-    const discountGroupId = discount ? discount.discountGroupId : null;
+    const discountId = discount && discount.discountId;
+    const discountGroupId = discount && discount.discountGroupId;
     const expiredAt = discount ? new Date(discount.expiredAt) : null;
     return () =>
       prisma.couponModel.create({
+        include: { couponGroup: true },
         data: {
           userId,
           couponGroupId,

@@ -1,4 +1,3 @@
-import dayjs from 'dayjs';
 import {
   $$$,
   getAccountsClient,
@@ -7,7 +6,6 @@ import {
   RecordProperties,
   UserModel,
 } from '..';
-import { getPlatformClient } from '../tools';
 
 export interface WebhookPayment {
   requestId: string;
