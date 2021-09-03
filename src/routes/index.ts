@@ -1,18 +1,14 @@
-import cors from 'cors';
-import express, { Application } from 'express';
-import morgan from 'morgan';
-import os from 'os';
+import { Router } from 'express';
 import {
   Card,
+  clusterInfo,
   getCardsRouter,
   getCouponsRouter,
   getInternalRouter,
   getLegacyRouter,
   getRecordsRouter,
   getWebhookRouter,
-  InternalError,
   InternalMiddleware,
-  logger,
   OPCODE,
   UserMiddleware,
   Wrapper,
@@ -25,33 +21,21 @@ export * from './legacy';
 export * from './records';
 export * from './webhook';
 
-export function getRouter(): Application {
-  const router = express();
-  InternalError.registerSentry(router);
+export function getRouter(): Router {
+  const router = Router();
 
-  const hostname = os.hostname();
-  const logging = morgan('common', {
-    stream: { write: (str: string) => logger.info(`${str.trim()}`) },
-  });
-
-  router.use(cors());
-  router.use(logging);
-  router.use(express.json());
-  router.use(express.urlencoded({ extended: true }));
   router.use('/legacy', getLegacyRouter());
   router.use('/cards', UserMiddleware(), getCardsRouter());
   router.use('/records', UserMiddleware(), getRecordsRouter());
   router.use('/coupons', UserMiddleware(), getCouponsRouter());
   router.use('/internal', InternalMiddleware(), getInternalRouter());
   router.use('/webhook', getWebhookRouter());
-
   router.get(
     '/',
     Wrapper(async (_req, res) => {
       res.json({
         opcode: OPCODE.SUCCESS,
-        mode: process.env.NODE_ENV,
-        cluster: hostname,
+        ...clusterInfo,
       });
     })
   );
@@ -62,13 +46,6 @@ export function getRouter(): Application {
     Wrapper(async (req, res) => {
       await Card.checkReady(req.user);
       res.json({ opcode: OPCODE.SUCCESS });
-    })
-  );
-
-  router.all(
-    '*',
-    Wrapper(async () => {
-      throw new InternalError('Invalid API', 404);
     })
   );
 
