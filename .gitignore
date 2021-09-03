@@ -69,8 +69,8 @@ typings/
 .yarn-integrity
 
 # dotenv environment variables file
-.env*
-.env.test
+.env
+.env.*
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -105,8 +105,3 @@ dist
 
 # Webpack
 .webpack
-
-# MacOS
-.DS_Store
-.AppleDouble
-.LSOverride
