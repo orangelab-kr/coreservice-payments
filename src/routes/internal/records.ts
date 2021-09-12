@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { InternalRecordMiddleware, OPCODE, Record, Wrapper, $$$ } from '../..';
 
-export function getInternalRecordsRouter() {
+export function getInternalRecordsRouter(): Router {
   const router = Router();
 
   router.get(

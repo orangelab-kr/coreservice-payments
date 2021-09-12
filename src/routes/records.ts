@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { OPCODE, Record, RecordMiddleware, Wrapper, $$$ } from '..';
 
-export function getRecordsRouter() {
+export function getRecordsRouter(): Router {
   const router = Router();
 
   router.get(

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { $$$, Card, CardMiddleware, OPCODE, Wrapper } from '..';
 
-export function getCardsRouter() {
+export function getCardsRouter(): Router {
   const router = Router();
 
   router.get(

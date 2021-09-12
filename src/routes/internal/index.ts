@@ -11,7 +11,7 @@ import { OPCODE } from '../../tools';
 export * from './coupons';
 export * from './records';
 
-export function getInternalRouter() {
+export function getInternalRouter(): Router {
   const router = Router();
 
   router.use(

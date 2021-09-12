@@ -1,8 +1,7 @@
 import { Router } from 'express';
-import { Webhook } from '../controllers';
-import { OPCODE, Wrapper } from '../tools';
+import { OPCODE, Webhook, Wrapper } from '..';
 
-export function getWebhookRouter() {
+export function getWebhookRouter(): Router {
   const router = Router();
 
   router.post(

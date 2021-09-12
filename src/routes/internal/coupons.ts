@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { $$$, Coupon, InternalCouponMiddleware, OPCODE, Wrapper } from '../..';
 
-export function getInternalCouponsRouter() {
+export function getInternalCouponsRouter(): Router {
   const router = Router();
 
   router.get(
