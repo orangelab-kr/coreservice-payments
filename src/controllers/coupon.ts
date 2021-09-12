@@ -209,7 +209,7 @@ export class Coupon {
     discountGroupId: string
   ): Promise<OpenApiDiscount> {
     const { discount } = await getPlatformClient()
-      .get(`discount/${discountGroupId}/generate`)
+      .get(`discount/discountGroups/${discountGroupId}/generate`)
       .json<{ opcode: number; discount: OpenApiDiscount }>();
 
     return discount;

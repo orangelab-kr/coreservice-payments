@@ -61,7 +61,7 @@ export class CouponGroup {
       const { openapi } = <CouponGroupProperties>properties;
       if (openapi) {
         await getPlatformClient()
-          .get(`discount/${openapi.discountGroupId}`)
+          .get(`discount/discountGroups/${openapi.discountGroupId}`)
           .json<{ opcode: number; discountGroup: OpenApiDiscountGroup }>();
       }
     }
