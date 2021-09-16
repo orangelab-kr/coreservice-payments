@@ -11,7 +11,7 @@ export function InternalCouponMiddleware(): Callback {
       throw new InternalError('쿠폰을 찾을 수 없습니다', OPCODE.REQUIRED_LOGIN);
     }
 
-    const coupon = await Coupon.getCouponOrThrow(user, couponId);
+    const coupon = await Coupon.getCouponOrThrow(user, couponId, true);
     req.internal.coupon = coupon;
 
     await next();

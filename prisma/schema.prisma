@@ -6,7 +6,7 @@ datasource db {
 generator client {
   provider        = "prisma-client-js"
   binaryTargets   = ["native", "rhel-openssl-1.0.x"]
-  previewFeatures = ["nApi", "filterJson"]
+  previewFeatures = ["filterJson"]
 }
 
 model PaymentKeyModel {
@@ -69,14 +69,21 @@ model RecordModel {
   deletedAt DateTime?
 }
 
+enum CouponGroupType {
+  ONETIME
+  LONGTIME
+}
+
 model CouponGroupModel {
   couponGroupId String @id @default(uuid())
 
-  code        String
+  code        String?
+  type        CouponGroupType @default(ONETIME)
   name        String
   description String
 
-  limit Int?
+  validity Int?
+  limit    Int?
 
   coupons    CouponModel[]
   properties Json?

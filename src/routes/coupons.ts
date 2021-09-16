@@ -21,6 +21,15 @@ export function getCouponsRouter(): Router {
     })
   );
 
+  router.get(
+    '/:couponId/redeem',
+    CouponMiddleware(),
+    Wrapper(async (req, res) => {
+      const properties = await Coupon.redeemCoupon(req.coupon);
+      res.json({ opcode: OPCODE.SUCCESS, properties });
+    })
+  );
+
   router.post(
     '/',
     Wrapper(async (req, res) => {

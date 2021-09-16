@@ -31,6 +31,15 @@ export function getInternalCouponsRouter(): Router {
     })
   );
 
+  router.get(
+    '/:couponId/redeem',
+    InternalCouponMiddleware(),
+    Wrapper(async (req, res) => {
+      const properties = await Coupon.redeemCoupon(req.internal.coupon);
+      res.json({ opcode: OPCODE.SUCCESS, properties });
+    })
+  );
+
   router.post(
     '/:couponId',
     InternalCouponMiddleware(),

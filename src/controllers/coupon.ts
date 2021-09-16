@@ -1,12 +1,21 @@
-import { CouponModel, Prisma, PrismaPromise } from '@prisma/client';
-import { CouponGroup, CouponGroupProperties, Joi, UserModel } from '..';
+import {
+  CouponGroupModel,
+  CouponGroupType,
+  CouponModel,
+  Prisma,
+  PrismaPromise,
+} from '@prisma/client';
+import dayjs from 'dayjs';
 import {
   $$$,
-  Database,
+  CouponGroup,
   getPlatformClient,
   InternalError,
+  Joi,
   OPCODE,
-} from '../tools';
+  UserModel,
+} from '..';
+import { Database } from '../tools';
 
 const { prisma } = Database;
 
@@ -39,18 +48,48 @@ export interface OpenApiDiscount {
 }
 
 export interface CouponProperties {
+  // 1회성일때만 존재함
   openapi?: {
     discountGroupId: string;
     discountId: string;
+    expiredAt: Date;
   };
 }
 
 export class Coupon {
+  public static defaultSelect: Prisma.CouponModelSelect = {
+    couponId: true,
+    userId: true,
+    couponGroupId: true,
+    couponGroup: {
+      select: {
+        couponGroupId: true,
+        code: false,
+        type: true,
+        name: true,
+        description: true,
+        validity: true,
+        limit: true,
+        properties: false,
+        createdAt: true,
+        updatedAt: true,
+        deletedAt: true,
+      },
+    },
+    properties: false,
+    usedAt: true,
+    expiredAt: true,
+    createdAt: true,
+    updatedAt: true,
+    deletedAt: true,
+  };
+
   public static async getCouponOrThrow(
     user: UserModel,
-    couponId: string
+    couponId: string,
+    showProperties = false
   ): Promise<CouponModel> {
-    const coupon = await $$$(this.getCoupon(user, couponId));
+    const coupon = await $$$(this.getCoupon(user, couponId, showProperties));
     if (!coupon) {
       throw new InternalError('쿠폰을 찾을 수 없습니다.', OPCODE.NOT_FOUND);
     }
@@ -60,14 +99,19 @@ export class Coupon {
 
   public static async getCoupon(
     user: UserModel,
-    couponId: string
+    couponId: string,
+    showProperties = false
   ): Promise<() => Prisma.Prisma__CouponModelClient<CouponModel | null>> {
     const { userId } = user;
-    return () =>
-      prisma.couponModel.findFirst({
-        include: { couponGroup: true },
-        where: { userId, couponId },
-      });
+    const query: Prisma.CouponModelFindFirstArgs = {
+      where: { userId, couponId },
+    };
+
+    if (showProperties) query.include = { couponGroup: true };
+    else query.select = Coupon.defaultSelect;
+    return <() => Prisma.Prisma__CouponModelClient<CouponModel | null>>(
+      (() => prisma.couponModel.findFirst(query))
+    );
   }
 
   public static async getCoupons(
@@ -108,12 +152,12 @@ export class Coupon {
       ],
     };
 
+    const select = this.defaultSelect;
     if (!showUsed) where.usedAt = null;
-    const include: Prisma.CouponModelInclude = { couponGroup: true };
-    const [total, coupons] = await prisma.$transaction([
+    const [total, coupons] = <any>await prisma.$transaction([
       prisma.couponModel.count({ where }),
       prisma.couponModel.findMany({
-        include,
+        select,
         where,
         take,
         skip,
@@ -132,7 +176,7 @@ export class Coupon {
       expiredAt?: Date;
       properties?: CouponProperties;
     }
-  ): Promise<any> {
+  ): Promise<() => Prisma.Prisma__CouponModelClient<CouponModel>> {
     const { couponId } = coupon;
     const schema = await Joi.object({
       couponGroupId: Joi.string().uuid().optional(),
@@ -144,9 +188,9 @@ export class Coupon {
     const { properties, couponGroupId, usedAt, expiredAt } =
       await schema.validateAsync(props);
 
-    return () =>
+    return <() => Prisma.Prisma__CouponModelClient<CouponModel>>(() =>
       prisma.couponModel.update({
-        include: { couponGroup: true },
+        select: this.defaultSelect,
         where: { couponId },
         data: {
           couponGroupId,
@@ -154,7 +198,43 @@ export class Coupon {
           expiredAt,
           properties,
         },
+      }));
+  }
+
+  public static async redeemCoupon(
+    coupon: CouponModel & { couponGroup?: CouponGroupModel }
+  ): Promise<CouponProperties> {
+    const { couponId } = coupon;
+    const { ONETIME, LONGTIME } = CouponGroupType;
+    if (!coupon.couponGroup) {
+      throw new InternalError('쿠폰 그룹 정보가 없습니다.', OPCODE.NOT_FOUND);
+    }
+
+    if (coupon.expiredAt && dayjs(coupon.expiredAt).isBefore(dayjs())) {
+      throw new InternalError('쿠폰이 만료되었습니다.', OPCODE.ERROR);
+    }
+
+    if (coupon.couponGroup.type === ONETIME) {
+      // 일회성 쿠폰의 경우 사용 처리를 한다.
+      await prisma.couponModel.update({
+        where: { couponId },
+        data: { usedAt: new Date() },
       });
+    }
+
+    // 이미 속성이 있는 경우 기존 정보를 사용한다.
+    if (coupon.properties && JSON.stringify(coupon.properties) !== '{}') {
+      return <CouponProperties>coupon.properties;
+    }
+
+    const { couponGroup } = coupon;
+    const withGenerate = coupon.couponGroup.type === LONGTIME;
+    const properties = CouponGroup.getCouponPropertiesByCouponGroup({
+      couponGroup,
+      withGenerate,
+    });
+
+    return properties;
   }
 
   public static async enrollCoupon(
@@ -178,31 +258,34 @@ export class Coupon {
       }
     }
 
-    let discount: OpenApiDiscount | undefined;
-    const properties = <CouponGroupProperties>couponGroup.properties;
-    if (properties && properties.openapi) {
-      const { discountGroupId } = properties.openapi;
-      discount = await this.generateDiscountId(discountGroupId);
+    const withGenerate = couponGroup.type === CouponGroupType.ONETIME;
+    const couponProps = await CouponGroup.getCouponPropertiesByCouponGroup({
+      couponGroup,
+      withGenerate,
+    });
+
+    let expiredAt: Date | undefined;
+    // 일회성 쿠폰의 만료일이 있을 경우, 자동으로 만료일을 할당한다.
+    if (couponProps.openapi?.expiredAt) {
+      expiredAt = couponProps.openapi.expiredAt;
     }
 
-    const discountId = discount && discount.discountId;
-    const discountGroupId = discount && discount.discountGroupId;
-    const expiredAt = discount ? new Date(discount.expiredAt) : null;
-    return () =>
+    // 쿠폰 그룹에 만료일이 있을 경우, 할인의 만료 정보를 무시한다.
+    if (couponGroup.validity) {
+      expiredAt = dayjs().add(couponGroup.validity, 'ms').toDate();
+    }
+
+    const properties = <any>couponProps;
+    return <() => Prisma.Prisma__CouponModelClient<CouponModel>>(() =>
       prisma.couponModel.create({
-        include: { couponGroup: true },
+        select: this.defaultSelect,
         data: {
           userId,
           couponGroupId,
           expiredAt,
-          properties: {
-            openapi: {
-              discountId,
-              discountGroupId,
-            },
-          },
+          properties,
         },
-      });
+      }));
   }
 
   public static async generateDiscountId(

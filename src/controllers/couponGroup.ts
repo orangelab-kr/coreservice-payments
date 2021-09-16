@@ -1,12 +1,14 @@
-import { CouponGroupModel, Prisma } from '@prisma/client';
+import { CouponGroupModel, CouponGroupType, Prisma } from '@prisma/client';
 import {
   $$$,
-  Database,
+  Coupon,
+  CouponProperties,
   getPlatformClient,
   InternalError,
   Joi,
   OPCODE,
-} from '../tools';
+} from '..';
+import { Database } from '../tools';
 
 const { prisma } = Database;
 
@@ -42,15 +44,19 @@ export class CouponGroup {
     properties: CouponGroupProperties;
   }): Promise<() => Prisma.Prisma__CouponGroupModelClient<CouponGroupModel>> {
     const schema = await Joi.object({
-      code: Joi.string().required(),
+      code: Joi.string().allow(null).optional(),
       name: Joi.string().min(2).max(16).required(),
+      type: Joi.string()
+        .valid(...Object.values(CouponGroupType))
+        .required(),
+      validity: Joi.number().allow(null).optional(),
+      limit: Joi.number().allow(null).optional(),
       description: Joi.string().default('').allow('').optional(),
       properties: Joi.object().optional(),
     });
 
-    const { code, name, description, properties } = await schema.validateAsync(
-      props
-    );
+    const { code, name, type, description, validity, limit, properties } =
+      await schema.validateAsync(props);
 
     await Promise.all([
       this.isUnusedCouponGroupNameOrThrow(name),
@@ -71,6 +77,9 @@ export class CouponGroup {
         data: {
           code,
           name,
+          type,
+          validity,
+          limit,
           description,
           properties,
         },
@@ -154,6 +163,33 @@ export class CouponGroup {
         OPCODE.ALREADY_EXISTS
       );
     }
+  }
+
+  public static async getCouponPropertiesByCouponGroup(props: {
+    couponGroup: CouponGroupModel;
+    withGenerate: boolean;
+  }): Promise<CouponProperties> {
+    const { couponGroup, withGenerate } = props;
+
+    const properties: CouponProperties = {};
+    const couponGroupProps = <CouponGroupProperties>couponGroup.properties;
+    if (!withGenerate) return properties;
+
+    // openapi 데이터가 있을 경우, openapi 할인 정보를 발급하기
+    if (couponGroupProps.openapi) {
+      const { discountGroupId } = couponGroupProps.openapi;
+      const { discountId, expiredAt } = await Coupon.generateDiscountId(
+        discountGroupId
+      );
+
+      properties.openapi = {
+        discountGroupId,
+        discountId,
+        expiredAt,
+      };
+    }
+
+    return properties;
   }
 
   public static async getCouponGroups(props: {
