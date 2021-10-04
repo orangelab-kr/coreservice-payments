@@ -1,6 +1,6 @@
 import { CardModel, Prisma, PrismaPromise } from '@prisma/client';
-import { $$$, InternalError, Joi, Jtnet, OPCODE, Record, UserModel } from '..';
-import { Database } from '../tools';
+import { $$$, Joi, Jtnet, Record, UserModel } from '..';
+import { Database, RESULT } from '../tools';
 
 const { prisma } = Database;
 
@@ -11,16 +11,8 @@ export class Card {
       Record.getUnpaidRecord(user),
     ]);
 
-    if (cards.length <= 0) {
-      throw new InternalError('카드를 등록해주세요.', OPCODE.NOT_FOUND);
-    }
-
-    if (records.length > 0) {
-      throw new InternalError(
-        '결제 실패 내역이 있습니다. 결제 완료 후 진행해주세요.',
-        OPCODE.ERROR
-      );
-    }
+    if (cards.length <= 0) throw RESULT.NO_AVAILABLE_CARD();
+    if (records.length > 0) throw RESULT.HAS_UNPAID_RECORD();
   }
 
   public static async getCards(
@@ -84,9 +76,7 @@ export class Card {
     cardName: string
   ): Promise<void> {
     const isUnregistered = await this.isUnregisteredCard(user, cardName);
-    if (!isUnregistered) {
-      throw new InternalError('이미 등록한 카드입니다.', OPCODE.ALREADY_EXISTS);
-    }
+    if (!isUnregistered) throw RESULT.DUPLICATED_CARD();
   }
 
   public static async revokeCard(
@@ -106,10 +96,7 @@ export class Card {
     showBillingKey = false
   ): Promise<CardModel> {
     const card = await $$$(this.getCard(user, cardId, showBillingKey));
-    if (!card) {
-      throw new InternalError('카드를 찾을 수 없습니다.', OPCODE.NOT_FOUND);
-    }
-
+    if (!card) throw RESULT.CANNOT_FIND_CARD();
     return card;
   }
 

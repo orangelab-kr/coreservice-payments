@@ -1,14 +1,6 @@
 import { CouponGroupModel, CouponGroupType, Prisma } from '@prisma/client';
-import {
-  $$$,
-  Coupon,
-  CouponProperties,
-  getPlatformClient,
-  InternalError,
-  Joi,
-  OPCODE,
-} from '..';
-import { Database } from '../tools';
+import { $$$, Coupon, CouponProperties, getPlatformClient, Joi } from '..';
+import { Database, RESULT } from '../tools';
 
 const { prisma } = Database;
 
@@ -99,13 +91,7 @@ export class CouponGroup {
     couponGroupId: string
   ): Promise<CouponGroupModel> {
     const couponGroup = await $$$(this.getCouponGroup(couponGroupId));
-    if (!couponGroup) {
-      throw new InternalError(
-        '해당 쿠폰을 찾을 수 없습니다.',
-        OPCODE.NOT_FOUND
-      );
-    }
-
+    if (!couponGroup) throw RESULT.CANNOT_FIND_COUPON_GROUP();
     return couponGroup;
   }
 
@@ -121,13 +107,7 @@ export class CouponGroup {
     code: string
   ): Promise<CouponGroupModel> {
     const couponGroup = await $$$(this.getCouponGroupByCode(code));
-    if (!couponGroup) {
-      throw new InternalError(
-        '해당 쿠폰을 찾을 수 없습니다.',
-        OPCODE.NOT_FOUND
-      );
-    }
-
+    if (!couponGroup) throw RESULT.CANNOT_FIND_COUPON_GROUP();
     return couponGroup;
   }
 
@@ -140,12 +120,7 @@ export class CouponGroup {
     name: string
   ): Promise<void> {
     const unused = await this.isUnusedCouponGroupName(name);
-    if (!unused) {
-      throw new InternalError(
-        '이미 사용중인 이름입니다.',
-        OPCODE.ALREADY_EXISTS
-      );
-    }
+    if (!unused) throw RESULT.DUPLICATED_COUPON_GROUP_NAME();
   }
 
   public static async isUnusedCouponGroupCode(code: string): Promise<boolean> {
@@ -157,12 +132,7 @@ export class CouponGroup {
     code: string
   ): Promise<void> {
     const unused = await this.isUnusedCouponGroupCode(code);
-    if (!unused) {
-      throw new InternalError(
-        '이미 사용중인 코드입니다.',
-        OPCODE.ALREADY_EXISTS
-      );
-    }
+    if (!unused) throw RESULT.DUPLICATED_COUPON_GROUP_CODE();
   }
 
   public static async getCouponPropertiesByCouponGroup(props: {

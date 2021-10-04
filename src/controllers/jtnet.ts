@@ -1,7 +1,7 @@
 import { PaymentKeyModel, RecordModel } from '@prisma/client';
 import dayjs from 'dayjs';
 import got, { Got } from 'got';
-import { Database, InternalError, Joi, OPCODE } from '../tools';
+import { Database, Joi, RESULT } from '../tools';
 
 const { prisma } = Database;
 
@@ -14,13 +14,8 @@ export class Jtnet {
     const paymentKey = await prisma.paymentKeyModel.findFirst({
       where: { paymentKeyId },
     });
-    if (!paymentKey) {
-      throw new InternalError(
-        '해당 결제 제공자를 찾을 수 없습니다.',
-        OPCODE.NOT_FOUND
-      );
-    }
 
+    if (!paymentKey) throw RESULT.CANNOT_FIND_PAYMENT_PROVIDER();
     return paymentKey;
   }
 
@@ -29,13 +24,7 @@ export class Jtnet {
       where: { primary: true },
     });
 
-    if (!paymentKey) {
-      throw new InternalError(
-        '해당 결제 제공자를 찾을 수 없습니다.',
-        OPCODE.NOT_FOUND
-      );
-    }
-
+    if (!paymentKey) throw RESULT.CANNOT_FIND_PAYMENT_PROVIDER();
     return paymentKey;
   }
 
@@ -92,10 +81,7 @@ export class Jtnet {
       .json<any>();
 
     if (res.result_cd !== '0000') {
-      throw new InternalError(
-        `결제를 할 수 없습니다. ${res.result_msg}`,
-        OPCODE.ERROR
-      );
+      throw RESULT.FAILED_PAYMENT({ args: [res.result_msg] });
     }
 
     return res.tid;
@@ -104,10 +90,7 @@ export class Jtnet {
   public static async refundBilling(record: RecordModel): Promise<void> {
     const client = this.getClient();
     const { paymentKeyId, amount, tid } = record;
-    if (!paymentKeyId) {
-      throw new InternalError('결제되지 않은 결제 내역입니다.', OPCODE.ERROR);
-    }
-
+    if (!paymentKeyId) throw RESULT.NOT_PAIED_RECORD();
     const { identity, secretKey } = await this.getPaymentKey(paymentKeyId);
     const res = await client
       .post({
@@ -124,7 +107,7 @@ export class Jtnet {
       .json<any>();
 
     if (!['2001', '2013'].includes(res.result_cd)) {
-      throw new InternalError(`결제를 취소할 수 없습니다. ${res.result_msg}`);
+      throw RESULT.CANNOT_REFUND_RECORD({ args: [res.result_msg] });
     }
   }
 
@@ -143,10 +126,7 @@ export class Jtnet {
       .json<any>();
 
     if (res.result_cd !== '0000') {
-      throw new InternalError(
-        `카드를 만료시킬 수 없습니다. ${res.result_msg}`,
-        OPCODE.ERROR
-      );
+      throw RESULT.CANNOT_DELETE_BILLING_KEY({ args: [res.result_msg] });
     }
   }
 
@@ -183,10 +163,7 @@ export class Jtnet {
       .json<any>();
 
     if (res.result_cd !== '0000') {
-      throw new InternalError(
-        `카드가 유효하지 않습니다. ${res.result_msg}`,
-        OPCODE.ERROR
-      );
+      throw RESULT.CARD_IS_NOT_VALID({ args: [res.result_msg] });
     }
 
     return {

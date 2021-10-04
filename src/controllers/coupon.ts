@@ -6,16 +6,8 @@ import {
   PrismaPromise,
 } from '@prisma/client';
 import dayjs from 'dayjs';
-import {
-  $$$,
-  CouponGroup,
-  getPlatformClient,
-  InternalError,
-  Joi,
-  OPCODE,
-  UserModel,
-} from '..';
-import { Database } from '../tools';
+import { $$$, CouponGroup, getPlatformClient, Joi, UserModel } from '..';
+import { Database, RESULT } from '../tools';
 
 const { prisma } = Database;
 
@@ -90,10 +82,7 @@ export class Coupon {
     showProperties = false
   ): Promise<CouponModel> {
     const coupon = await $$$(this.getCoupon(user, couponId, showProperties));
-    if (!coupon) {
-      throw new InternalError('쿠폰을 찾을 수 없습니다.', OPCODE.NOT_FOUND);
-    }
-
+    if (!coupon) throw RESULT.CANNOT_FIND_COUPON();
     return coupon;
   }
 
@@ -206,12 +195,9 @@ export class Coupon {
   ): Promise<CouponProperties> {
     const { couponId } = coupon;
     const { ONETIME, LONGTIME } = CouponGroupType;
-    if (!coupon.couponGroup) {
-      throw new InternalError('쿠폰 그룹 정보가 없습니다.', OPCODE.NOT_FOUND);
-    }
-
+    if (!coupon.couponGroup) throw RESULT.INVALID_ERROR();
     if (coupon.expiredAt && dayjs(coupon.expiredAt).isBefore(dayjs())) {
-      throw new InternalError('쿠폰이 만료되었습니다.', OPCODE.ERROR);
+      throw RESULT.EXPIRED_COUPON();
     }
 
     if (coupon.couponGroup.type === ONETIME) {
@@ -251,10 +237,7 @@ export class Coupon {
       );
 
       if (duplicateCount >= limit) {
-        throw new InternalError(
-          `해당 쿠폰은 ${limit}회만 사용 가능합니다.`,
-          OPCODE.EXCESS_LIMITS
-        );
+        throw RESULT.EXCEEDED_USAGE_COUPON({ args: [`${limit}`] });
       }
     }
 

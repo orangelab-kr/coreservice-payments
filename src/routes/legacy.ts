@@ -1,22 +1,22 @@
 import { Router } from 'express';
-import { Jtnet, OPCODE, Wrapper } from '..';
+import { Jtnet, RESULT, Wrapper } from '..';
 
 export function getLegacyRouter(): Router {
   const router = Router();
 
   router.post(
     '/generate',
-    Wrapper(async (req, res) => {
+    Wrapper(async (req) => {
       const { billingKey, cardName } = await Jtnet.createBillingKey(req.body);
-      res.json({ opcode: OPCODE.SUCCESS, billingKey, cardName });
+      throw RESULT.SUCCESS({ details: { billingKey, cardName } });
     })
   );
 
   router.post(
     '/invoke',
-    Wrapper(async (req, res) => {
+    Wrapper(async (req) => {
       const tid = await Jtnet.invokeBilling(req.body);
-      res.json({ opcode: OPCODE.SUCCESS, tid });
+      throw RESULT.SUCCESS({ details: { tid } });
     })
   );
 

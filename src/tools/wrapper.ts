@@ -1,49 +1,86 @@
 import * as Sentry from '@sentry/node';
 import { NextFunction, Request, Response } from 'express';
+import i18n from 'i18n';
 import { ValidationError } from 'joi';
-import { logger, OPCODE } from '..';
+import { RESULT } from '.';
 
-export type Callback = (
+i18n.configure({
+  defaultLocale: 'en',
+  locales: ['en', 'ko'],
+  directory: 'locales',
+  updateFiles: false,
+});
+
+export type WrapperCallback = (
   req: Request,
   res: Response,
   next: NextFunction
 ) => Promise<unknown>;
 
-export function Wrapper(cb: Callback): Callback {
-  return async function (req: Request, res: Response, next: NextFunction) {
-    try {
-      return await cb(req, res, next);
-    } catch (err: any) {
-      if (process.env.NODE_ENV !== 'prod') {
-        logger.error(err.message);
-        logger.error(err.stack);
-      }
+export type WrapperResultProps = WrapperResultLazyProps & {
+  opcode: number;
+  statusCode: number;
+  message?: string;
+  reportable?: boolean;
+  details?: any;
+  args?: string[];
+  res?: Response;
+};
 
-      let status = 500;
-      let opcode = OPCODE.ERROR;
-      let message = '알 수 없는 오류가 발생했습니다.';
-      const eventId = Sentry.captureException(err);
-      let details;
+export interface WrapperResultLazyProps {
+  details?: any;
+  args?: string[];
+  res?: Response;
+}
 
-      if (err.name === 'InternalError') {
-        opcode = err.opcode;
-        message = err.message;
-        details = err.details;
-      }
+export class WrapperResult extends Error {
+  public name = 'Result';
+  public opcode: number;
+  public statusCode: number;
+  public reportable: boolean;
+  public details: any;
+  public args: string[];
+  public res?: Response;
 
+  public constructor(props: WrapperResultProps) {
+    super();
+    this.opcode = props.opcode;
+    this.statusCode = props.statusCode || 500;
+    this.reportable = props.reportable || false;
+    this.details = props.details || {};
+    this.args = props.args || [];
+    this.res = props.res;
+
+    if (props.message) this.message = props.message;
+  }
+}
+
+export function Wrapper(cb: WrapperCallback): WrapperCallback {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    return cb(req, res, next).catch((err) => {
+      let eventId: string | undefined;
+      let result: WrapperResult;
+
+      if (err instanceof WrapperResult) result = err;
+      else result = RESULT.INVALID_ERROR();
       if (err instanceof ValidationError) {
-        status = 400;
-        message = '올바른 정보를 입력해주세요.';
-        details = err.details;
+        const { details } = err;
+        result = RESULT.FAILED_VALIDATE({ details: { details } });
       }
 
+      const { statusCode, opcode, details, reportable, args } = result;
+      const message = result.message
+        ? res.__(result.message, ...args)
+        : undefined;
+
+      if (reportable) eventId = Sentry.captureException(err);
       if (res.headersSent) return;
-      res.status(status).json({
+      res.status(statusCode).json({
         opcode,
         eventId,
         message,
-        details,
+        ...details,
       });
-    }
+    });
   };
 }

@@ -9,7 +9,7 @@ import {
   getRecordsRouter,
   getWebhookRouter,
   InternalMiddleware,
-  OPCODE,
+  RESULT,
   UserMiddleware,
   Wrapper,
 } from '..';
@@ -32,20 +32,17 @@ export function getRouter(): Router {
   router.use('/webhook', getWebhookRouter());
   router.get(
     '/',
-    Wrapper(async (_req, res) => {
-      res.json({
-        opcode: OPCODE.SUCCESS,
-        ...clusterInfo,
-      });
+    Wrapper(async () => {
+      throw RESULT.SUCCESS({ details: clusterInfo });
     })
   );
 
   router.get(
     '/ready',
     UserMiddleware(),
-    Wrapper(async (req, res) => {
+    Wrapper(async (req) => {
       await Card.checkReady(req.user);
-      res.json({ opcode: OPCODE.SUCCESS });
+      throw RESULT.SUCCESS();
     })
   );
 

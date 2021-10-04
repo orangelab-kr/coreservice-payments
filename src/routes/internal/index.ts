@@ -4,9 +4,9 @@ import {
   getInternalCouponsRouter,
   getInternalRecordsRouter,
   InternalUserMiddleware,
+  RESULT,
   Wrapper,
 } from '../..';
-import { OPCODE } from '../../tools';
 
 export * from './coupons';
 export * from './records';
@@ -31,7 +31,7 @@ export function getInternalRouter(): Router {
     InternalUserMiddleware(),
     Wrapper(async (req, res) => {
       await Card.checkReady(req.internal.user);
-      res.json({ opcode: OPCODE.SUCCESS });
+      throw RESULT.SUCCESS();
     })
   );
 

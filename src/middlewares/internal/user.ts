@@ -1,14 +1,13 @@
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import {
-  Callback,
   getAccountsClient,
-  InternalError,
   logger,
-  OPCODE,
+  RESULT,
   Wrapper,
+  WrapperCallback,
 } from '../..';
 
-export function InternalUserMiddleware(): Callback {
+export function InternalUserMiddleware(): WrapperCallback {
   const accountsClient = getAccountsClient();
 
   return Wrapper(async (req, res, next) => {
@@ -35,10 +34,7 @@ export function InternalUserMiddleware(): Callback {
         logger.error(err.stack);
       }
 
-      throw new InternalError(
-        '인증이 필요한 서비스입니다.',
-        OPCODE.REQUIRED_LOGIN
-      );
+      throw RESULT.CANNOT_FIND_USER();
     }
   });
 }

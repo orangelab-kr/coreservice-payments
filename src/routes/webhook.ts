@@ -1,22 +1,22 @@
 import { Router } from 'express';
-import { OPCODE, Webhook, Wrapper } from '..';
+import { RESULT, Webhook, Wrapper } from '..';
 
 export function getWebhookRouter(): Router {
   const router = Router();
 
   router.post(
     '/payment',
-    Wrapper(async (req, res) => {
+    Wrapper(async (req) => {
       await Webhook.onPayment(req.body);
-      res.json({ opcode: OPCODE.SUCCESS });
+      throw RESULT.SUCCESS();
     })
   );
 
   router.post(
     '/refund',
-    Wrapper(async (req, res) => {
+    Wrapper(async (req) => {
       await Webhook.onRefund(req.body);
-      res.json({ opcode: OPCODE.SUCCESS });
+      throw RESULT.SUCCESS();
     })
   );
 

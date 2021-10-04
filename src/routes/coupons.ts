@@ -1,40 +1,40 @@
 import { Router } from 'express';
-import { $$$, Coupon, CouponMiddleware, OPCODE, Wrapper } from '..';
+import { $$$, Coupon, CouponMiddleware, RESULT, Wrapper } from '..';
 
 export function getCouponsRouter(): Router {
   const router = Router();
 
   router.get(
     '/',
-    Wrapper(async (req, res) => {
+    Wrapper(async (req) => {
       const { total, coupons } = await Coupon.getCoupons(req.user, req.query);
-      res.json({ opcode: OPCODE.SUCCESS, coupons, total });
+      throw RESULT.SUCCESS({ details: { coupons, total } });
     })
   );
 
   router.get(
     '/:couponId',
     CouponMiddleware(),
-    Wrapper(async (req, res) => {
+    Wrapper(async (req) => {
       const { coupon } = req;
-      res.json({ opcode: OPCODE.SUCCESS, coupon });
+      throw RESULT.SUCCESS({ details: { coupon } });
     })
   );
 
   router.get(
     '/:couponId/redeem',
     CouponMiddleware(),
-    Wrapper(async (req, res) => {
+    Wrapper(async (req) => {
       const properties = await Coupon.redeemCoupon(req.coupon);
-      res.json({ opcode: OPCODE.SUCCESS, properties });
+      throw RESULT.SUCCESS({ details: { properties } });
     })
   );
 
   router.post(
     '/',
-    Wrapper(async (req, res) => {
+    Wrapper(async (req) => {
       const coupon = await $$$(Coupon.enrollCoupon(req.user, req.body.code));
-      res.json({ opcode: OPCODE.SUCCESS, coupon });
+      throw RESULT.SUCCESS({ details: { coupon } });
     })
   );
 

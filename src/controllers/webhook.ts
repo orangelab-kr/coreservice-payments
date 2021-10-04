@@ -1,7 +1,6 @@
 import {
   $$$,
   getAccountsClient,
-  OPCODE,
   Record,
   RecordProperties,
   UserModel,
@@ -171,7 +170,7 @@ export class Webhook {
     } = payload.data;
     const { user } = await getAccountsClient()
       .get(`users/${userId}`)
-      .json<{ opcode: OPCODE; user: UserModel }>();
+      .json<{ opcode: number; user: UserModel }>();
 
     const properties: RecordProperties = {
       openapi: <any>{ ...payload.data, ride: undefined },
@@ -197,7 +196,7 @@ export class Webhook {
     } = payload.data;
     const { user } = await getAccountsClient()
       .get(`users/${userId}`)
-      .json<{ opcode: OPCODE; user: UserModel }>();
+      .json<{ opcode: number; user: UserModel }>();
 
     const record = await Record.getRecordByPaymentIdOrThrow(user, paymentId);
     await $$$(Record.refundRecord(record));

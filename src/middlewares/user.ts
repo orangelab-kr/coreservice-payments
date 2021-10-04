@@ -1,11 +1,10 @@
 import dayjs, { Dayjs } from 'dayjs';
 import {
-  Callback,
   getAccountsClient,
-  InternalError,
   logger,
-  OPCODE,
+  RESULT,
   Wrapper,
+  WrapperCallback,
 } from '..';
 
 export interface UserModel {
@@ -19,14 +18,14 @@ export interface UserModel {
   updatedAt: Dayjs;
 }
 
-export function UserMiddleware(): Callback {
+export function UserMiddleware(): WrapperCallback {
   const accountsClient = getAccountsClient();
 
   return Wrapper(async (req, res, next) => {
     try {
       const { headers } = req;
       const { authorization } = headers;
-      if (typeof authorization !== 'string') throw new Error();
+      if (typeof authorization !== 'string') throw Error();
       const sessionId = authorization.substr(7);
       const { user } = await accountsClient
         .post(`users/authorize`, { json: { sessionId } })
@@ -51,10 +50,7 @@ export function UserMiddleware(): Callback {
         logger.error(err.stack);
       }
 
-      throw new InternalError(
-        '인증이 필요한 서비스입니다.',
-        OPCODE.REQUIRED_LOGIN
-      );
+      throw RESULT.REQUIRED_LOGIN();
     }
   });
 }

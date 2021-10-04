@@ -5,17 +5,8 @@ import {
   PrismaPromise,
   RecordModel,
 } from '@prisma/client';
-import {
-  $$$,
-  Card,
-  InternalError,
-  Joi,
-  Jtnet,
-  OPCODE,
-  getPlatformClient,
-  UserModel,
-} from '..';
-import { Database } from '../tools';
+import { $$$, Card, Joi, Jtnet, getPlatformClient, UserModel } from '..';
+import { Database, RESULT } from '../tools';
 
 const { prisma } = Database;
 
@@ -135,13 +126,11 @@ export class Record {
   }
 
   // 결제 재시도 후 데이터베이스 업데이트
-  public static async retryPayment(user: UserModel, record: RecordModel) {
-    if (record.processedAt) {
-      throw new InternalError(
-        '이미 결제된 결제 내역입니다.',
-        OPCODE.ALREADY_EXISTS
-      );
-    }
+  public static async retryPayment(
+    user: UserModel,
+    record: RecordModel
+  ): Promise<() => Prisma.Prisma__RecordModelClient<RecordModel | null>> {
+    if (record.processedAt) throw RESULT.ALREADY_PAIED_RECORD();
 
     const retiredAt = new Date();
     const { recordId } = record;
@@ -151,12 +140,7 @@ export class Record {
     });
 
     const { card, tid } = await this.tryPayment({ user, record });
-    if (!card) {
-      throw new InternalError(
-        '결제 가능한 카드가 없습니다.',
-        OPCODE.ACCESS_DENIED
-      );
-    }
+    if (!card) throw RESULT.NO_AVAILABLE_CARD();
 
     const { cardId } = card;
     const processedAt = new Date();
@@ -216,12 +200,7 @@ export class Record {
     });
 
     const { card, tid } = await this.tryPayment({ user, record });
-    if (required && !card) {
-      throw new InternalError(
-        '결제 가능한 카드가 없습니다.',
-        OPCODE.ACCESS_DENIED
-      );
-    }
+    if (required && !card) throw RESULT.NO_AVAILABLE_CARD();
 
     const cardId = card && card.cardId;
     const processedAt = card ? new Date() : null;
@@ -313,13 +292,7 @@ export class Record {
     recordId: string
   ): Promise<RecordModel> {
     const record = await $$$(this.getRecord(user, recordId));
-    if (!record) {
-      throw new InternalError(
-        '결제 내역을 찾을 수 없습니다.',
-        OPCODE.NOT_FOUND
-      );
-    }
-
+    if (!record) throw RESULT.CANNOT_FIND_RECORD();
     return record;
   }
 
@@ -345,13 +318,7 @@ export class Record {
     paymentId: string
   ): Promise<RecordModel> {
     const record = await $$$(this.getRecordByPaymentId(user, paymentId));
-    if (!record) {
-      throw new InternalError(
-        '결제 내역을 찾을 수 없습니다.',
-        OPCODE.NOT_FOUND
-      );
-    }
-
+    if (!record) throw RESULT.CANNOT_FIND_RECORD();
     return record;
   }
 
@@ -360,10 +327,7 @@ export class Record {
     reason?: string
   ): Promise<() => Prisma.Prisma__RecordModelClient<RecordModel>> {
     const { recordId, refundedAt, tid } = record;
-    if (refundedAt) {
-      throw new InternalError('이미 환불된 거래입니다.', OPCODE.ALREADY_EXISTS);
-    }
-
+    if (refundedAt) throw RESULT.ALREADY_REFUNDED_RECORD();
     if (tid) await Jtnet.refundBilling(record);
     return () =>
       prisma.recordModel.update({

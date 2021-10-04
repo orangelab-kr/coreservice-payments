@@ -1,34 +1,34 @@
 import { Router } from 'express';
-import { OPCODE, Record, RecordMiddleware, Wrapper, $$$ } from '..';
+import { $$$, Record, RecordMiddleware, RESULT, Wrapper } from '..';
 
 export function getRecordsRouter(): Router {
   const router = Router();
 
   router.get(
     '/',
-    Wrapper(async (req, res) => {
+    Wrapper(async (req) => {
       const { query, user } = req;
       const { total, records } = await Record.getRecords(user, query);
-      res.json({ opcode: OPCODE.SUCCESS, records, total });
+      throw RESULT.SUCCESS({ details: { records, total } });
     })
   );
 
   router.get(
     '/:recordId',
     RecordMiddleware(),
-    Wrapper(async (req, res) => {
+    Wrapper(async (req) => {
       const { record } = req;
-      res.json({ opcode: OPCODE.SUCCESS, record });
+      throw RESULT.SUCCESS({ details: { record } });
     })
   );
 
   router.get(
     '/:recordId/retry',
     RecordMiddleware(),
-    Wrapper(async (req, res) => {
+    Wrapper(async (req) => {
       const { record, user } = req;
       await $$$(Record.retryPayment(user, record));
-      res.json({ opcode: OPCODE.SUCCESS });
+      throw RESULT.SUCCESS();
     })
   );
 

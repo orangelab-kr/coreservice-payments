@@ -1,6 +1,6 @@
-import { Callback, logger, Wrapper } from '..';
+import { WrapperCallback, logger, Wrapper } from '..';
 
-export function LoggerMiddleware(): Callback {
+export function LoggerMiddleware(): WrapperCallback {
   return Wrapper(async (req, res, next) => {
     const startedAt = Date.now();
     const method = req.method;
