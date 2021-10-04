@@ -1,8 +1,5 @@
 import { CardModel, Prisma, PrismaPromise } from '@prisma/client';
-import { $$$, Joi, Jtnet, Record, UserModel } from '..';
-import { Database, RESULT } from '../tools';
-
-const { prisma } = Database;
+import { $$$, Joi, Jtnet, prisma, Record, RESULT, UserModel } from '..';
 
 export class Card {
   public static async checkReady(user: UserModel): Promise<void> {

@@ -5,10 +5,16 @@ import {
   PrismaPromise,
   RecordModel,
 } from '@prisma/client';
-import { $$$, Card, Joi, Jtnet, getPlatformClient, UserModel } from '..';
-import { Database, RESULT } from '../tools';
-
-const { prisma } = Database;
+import {
+  $$$,
+  Card,
+  getPlatformClient,
+  Joi,
+  Jtnet,
+  prisma,
+  RESULT,
+  UserModel,
+} from '..';
 
 export interface RecordProperties {
   openapi?: {

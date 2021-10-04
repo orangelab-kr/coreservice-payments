@@ -6,10 +6,15 @@ import {
   PrismaPromise,
 } from '@prisma/client';
 import dayjs from 'dayjs';
-import { $$$, CouponGroup, getPlatformClient, Joi, UserModel } from '..';
-import { Database, RESULT } from '../tools';
-
-const { prisma } = Database;
+import {
+  $$$,
+  CouponGroup,
+  getPlatformClient,
+  Joi,
+  prisma,
+  RESULT,
+  UserModel,
+} from '..';
 
 export interface OpenApiDiscount {
   discountId: string;

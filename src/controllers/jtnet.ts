@@ -1,9 +1,7 @@
 import { PaymentKeyModel, RecordModel } from '@prisma/client';
 import dayjs from 'dayjs';
 import got, { Got } from 'got';
-import { Database, Joi, RESULT } from '../tools';
-
-const { prisma } = Database;
+import { Joi, prisma, RESULT } from '..';
 
 export class Jtnet {
   private static client?: Got;

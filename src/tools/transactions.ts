@@ -1,7 +1,5 @@
 import { PrismaPromise } from '@prisma/client';
-import { Database } from '.';
-
-const { prisma } = Database;
+import { prisma } from '.';
 
 export type PrismaPromiseResult = PrismaPromise<any>;
 export type PrismaPromiseOnce = Promise<() => PrismaPromiseResult>;

@@ -1,8 +1,13 @@
 import { CouponGroupModel, CouponGroupType, Prisma } from '@prisma/client';
-import { $$$, Coupon, CouponProperties, getPlatformClient, Joi } from '..';
-import { Database, RESULT } from '../tools';
-
-const { prisma } = Database;
+import {
+  $$$,
+  Coupon,
+  CouponProperties,
+  getPlatformClient,
+  Joi,
+  prisma,
+  RESULT,
+} from '..';
 
 interface OpenApiDiscountGroup {
   discountGroupId: string;

@@ -7,8 +7,9 @@ const messages = {
   'any.failover': '{{#label}}(은)는 처리할 수 없는 오류가 발생하였습니다.',
   'any.invalid': '{{#label}}에 잘못된 값이 있습니다.',
   'any.only':
-    '{{#label}} must be {if(#valids.length == 1, "", "one of ")}{{#valids}}',
-  'any.ref': '{{#label}} {{#arg}} references {{:#ref}} which {{#reason}}',
+    '{{#label}}(은)는 {if(#valids.length == 1, "", "중 하나 ")}{{#valids}}',
+  'any.ref':
+    '{{#label}}(은)는 반드시 {{#arg}}을(를) 요청한 {{:#ref}}를 참조합니다. {{#reason}}',
   'any.required': '{{#label}}(을)를 반드시 입력해주세요.',
   'any.unknown': '{{#label}}(은)는 사용할 수 없습니다.',
   'string.alphanum': '{{#label}}(은) 알파벳과 숫자만 입력할 수 있습니다.',
@@ -40,52 +41,56 @@ const messages = {
   'string.token':
     '{{#label}}(은)는 알파벳과 숫자를 포함하여 밑줄(_)까지만 입력할 수 있습니다.',
   'string.pattern.base':
-    '{{#label}} with value {:[.]} fails to match the required pattern: {{#regex}}',
+    '값이 {:[.]}인 {{#label}}(은)는 필수 패턴과 일치하지 않음: {{#regex}}',
   'string.pattern.name':
-    '{{#label}} with value {:[.]} fails to match the {{#name}} pattern',
+    '값이 {:[.]}인 {{#label}}(은)는 이름 패턴과 일치하지 않습니다.',
   'string.pattern.invert.base':
-    '{{#label}} with value {:[.]} matches the inverted pattern: {{#regex}}',
+    '값이 {:[.]}인 {{#label}}(은)는 반전된 패턴과 일치합니다: {{#regex}}',
   'string.pattern.invert.name':
-    '{{#label}} with value {:[.]} matches the inverted {{#name}} pattern',
-  'string.trim': '{{#label}} must not have leading or trailing whitespace',
+    '값이 {:[.]}인 {{#label}}(은)는 반전된 {{#name}} 패턴과 일치합니다.',
+  'string.trim': '{{#label}}에는 선행 또는 후행 공백이 없어야 합니다.',
   'string.uri': '{{#label}}(은)는 올바른 URL이 아닙니다.',
   'string.uriCustomScheme':
     '{{#label}}(은)는 {{#scheme}}를 사용하는 올바른 URL이 아닙니다.',
   'string.uriRelativeOnly': '{{#label}}(은)는 올바른 상대 URL이 아닙니다.',
   'string.uppercase': '{{#label}}(은)는 대문자만 입력할 수 있습니다.',
-  'alternatives.all': '{{#label}} does not match all of the required types',
-  'alternatives.any': '{{#label}} does not match any of the allowed types',
-  'alternatives.match': '{{#label}} does not match any of the allowed types',
-  'alternatives.one': '{{#label}} matches more than one allowed type',
-  'alternatives.types': '{{#label}} must be one of {{#types}}',
+  'alternatives.all': '{{#label}}(은)는 모든 필수 유형과 일치하지 않습니다.',
+  'alternatives.any': '{{#label}}(은)는 허용된 유형과 일치하지 않습니다.',
+  'alternatives.match': '{{#label}}(은)는 허용된 유형과 일치하지 않습니다.',
+  'alternatives.one': '{{#label}}(은)는 둘 이상의 허용된 유형과 일치',
+  'alternatives.types':
+    '{{#label}}는 반드시 다음 중 하나여야 합니다. {{#types}}',
   'array.base': '{{#label}}(은)는 배열이여야 합니다.',
-  'array.excludes': '{{#label}} contains an excluded value',
+  'array.excludes': '{{#label}}(은)는 제외된 값을 포함합니다.',
   'array.hasKnown':
-    '{{#label}} does not contain at least one required match for type {:#patternLabel}',
-  'array.hasUnknown': '{{#label}} does not contain at least one required match',
-  'array.includes': '{{#label}} does not match any of the allowed types',
+    '{{#label}}(은)는 유형에 대한 필수 일치 항목이 하나 이상 포함되어 있지 않습니다. {:#patternLabel}',
+  'array.hasUnknown':
+    '{{#label}}(은)는 하나 이상의 필수 일치 항목이 포함되어 있지 않습니다.',
+  'array.includes': '{{#label}}(은)는 허용된 유형과 일치하지 않습니다.',
   'array.includesRequiredBoth':
-    '{{#label}} does not contain {{#knownMisses}} and {{#unknownMisses}} other required value(s)',
+    '{{#label}}(은)는 {{#knownMisses}}(과)와 {{#unknownMisses}} 다른 필수 값이 포함되어 있지 않습니다.',
   'array.includesRequiredKnowns':
-    '{{#label}} does not contain {{#knownMisses}}',
+    '{{#label}}(은)는 {{#knownMisses}}가 포함되어 있지 않습니다.',
   'array.includesRequiredUnknowns':
-    '{{#label}} does not contain {{#unknownMisses}} required value(s)',
+    '{{#label}}(은)는 {{#unknownMisses}} 필수 값이 포함되어 있지 않습니다.',
   'array.length': '{{#label}}의 개수가 {{#limit}}개 이여야 합니다.',
   'array.max': '{{#label}}의 개수가 {{#limit}}개 보다 많거나 같아야 합니다.',
   'array.min': '{{#label}}의 개수가 {{#limit}}개 보다 많아야 합니다.',
-  'array.orderedLength': '{{#label}} must contain at most {{#limit}} items',
-  'array.sort': '{{#label}} must be sorted in {#order} order by {{#by}}',
+  'array.orderedLength':
+    '{{#label}}(은)는 최대 {{#limit}} 항목을 포함해야 합니다.',
+  'array.sort':
+    '{{#label}}(은)는 {{#by}}에 의해 {#order} 순서로 정렬되어야 합니다.',
   'array.sort.mismatching':
-    '{{#label}} cannot be sorted due to mismatching types',
+    '{{#label}}(은)는 유형이 일치하지 않아 정렬할 수 없습니다.',
   'array.sort.unsupported':
-    '{{#label}} cannot be sorted due to unsupported type {#type}',
-  'array.sparse': '{{#label}} must not be a sparse array item',
-  'array.unique': '{{#label}} contains a duplicate value',
+    '{{#label}}(은)는 지원되지 않는 유형({#type})으로 인해 정렬할 수 없습니다.',
+  'array.sparse': '{{#label}}(은)는 희소 배열 항목이 아니어야 합니다.',
+  'array.unique': '{{#label}}(은)는 중복 값을 포함되어 있습니다.',
   'boolean.base': '{{#label}}(은)는 예/아니요 중 하나를 선택해야 합니다.',
   'binary.base': '{{#label}}(은)는 문자열이거나 버퍼여야 합니다.',
   'binary.length': '{{#label}}(은)는 {{#limit}}바이트이여야 합니다.',
-  'binary.max': '{{#label}} must be less than or equal to {{#limit}} bytes',
-  'binary.min': '{{#label}} must be at least {{#limit}} bytes',
+  'binary.max': '{{#label}}(은)는 {{#limit}}바이트 이하여야 합니다.',
+  'binary.min': '{{#label}}(은)는 {{#limit}}바이트 이상이어야 합니다.',
   'date.base': '{{#label}}(은)는 올바른 날짜가 아닙니다.',
   'date.format':
     '{{#label}}(은)는 {msg("date.format." + #format) || #format} 포멧이여야 합니다.',
@@ -97,39 +102,38 @@ const messages = {
   'date.format.javascript': '타임스템프',
   'date.format.unix': '타임스템프',
   'object.and':
-    '{{#label}} contains {{#presentWithLabels}} without its required peers {{#missingWithLabels}}',
+    '{{#label}}에는 필수 피어인 {{#presentWithLabels}} 없이 {{#missingWithLabels}}(이)가 포함됩니다.',
   'object.assert':
-    '{{#label}} is invalid because {if(#subject.key, `"` + #subject.key + `" failed to ` + (#message || "pass the assertion test"), #message || "the assertion failed")}',
-  'object.base': '{{#label}} must be of type {{#type}}',
-  'object.instance': '{{#label}} must be an instance of {{:#type}}',
+    '{{#label}}(은)는 올바르지 않은 값입니다. {if(#subject.key, `"` + #subject.key + `" 는 ` + (#message || "테스트를 통과했습니다."), #message || "테스트에 통과하지 못했습니다.)}',
+  'object.base': '{{#label}}(은)는 반드시 {{#type}} 타입이여야 합니다.',
+  'object.instance': '{{#label}}(은)는 {{:#type}} 타입의 인스턴스여야 합니다.',
   'object.length':
-    '{{#label}} must have {{#limit}} key{if(#limit == 1, "", "s")}',
+    '{{#label}}(은)는 반드시 {{#limit}}개의 키값이 있어야 합니다.',
   'object.max':
-    '{{#label}} must have less than or equal to {{#limit}} key{if(#limit == 1, "", "s")}',
+    '{{#label}}(은)는 반드시 {{#limit}}개의 키값보다 적거나 같아야 합니다.',
   'object.min':
-    '{{#label}} must have at least {{#limit}} key{if(#limit == 1, "", "s")}',
+    '{{#label}}(은)는 반드시 {{#limit}}개의 키값보다 적어야 합니다.',
   'object.missing':
-    '{{#label}} must contain at least one of {{#peersWithLabels}}',
+    '{{#label}}(은)는 {{#peersWithLabels}} 중 하나 이상을 포함해야 합니다.',
   'object.nand':
-    '{{:#mainWithLabel}} must not exist simultaneously with {{#peersWithLabels}}',
+    '{{:#mainWithLabel}}(은)는 {{#peersWithLabels}}(과)와 동시에 존재할 수 없습니다.',
   'object.oxor':
-    '{{#label}} contains a conflict between optional exclusive peers {{#peersWithLabels}}',
-  'object.pattern.match':
-    '{{#label}} keys failed to match pattern requirements',
-  'object.refType': '{{#label}} must be a Joi reference',
+    '{{#label}}(은)는 선택적 배타적 피어 {{#peersWithLabels}} 간의 충돌을 포함합니다.',
+  'object.pattern.match': '{{#label}} 키가 패턴 요구 사항과 일치하지 않습니다.',
+  'object.refType': '{{#label}}(은)는 Joi 참조여야 합니다.',
   'object.regex': '{{#label}}(은)는 정규식이여야 합니다.',
   'object.rename.multiple':
-    '{{#label}} cannot rename {{:#from}} because multiple renames are disabled and another key was already renamed to {{:#to}}',
+    '{{#label}}(은)는 다중 이름 바꾸기가 비활성화되어 있고 다른 키의 이름이 이미 {{:#to}}로 변경되었기 때문에 {{:#from}}의 이름을 바꿀 수 없습니다.',
   'object.rename.override':
-    '{{#label}} cannot rename {{:#from}} because override is disabled and target {{:#to}} exists',
-  'object.schema': '{{#label}} must be a Joi schema of {{#type}} type',
+    '재정의가 비활성화되어 있고 대상 {{:#to}}(이)가 존재하기 때문에 {{#label}}(은)는 {{:#from}}의 이름을 바꿀 수 없습니다.',
+  'object.schema': '{{#label}}(은)는 유형의 Joi 스키마여야 합니다.',
   'object.unknown': '{{#label}}(은)는 허용되지 않습니다.',
   'object.with':
-    '{{:#mainWithLabel}} missing required peer {{:#peerWithLabel}}',
+    '{{:#mainWithLabel}}에 필수 피어 {{:#peerWithLabel}}(이)가 없습니다.',
   'object.without':
-    '{{:#mainWithLabel}} conflict with forbidden peer {{:#peerWithLabel}}',
+    '금지된 피어 {{:#peerWithLabel}}(과)와 {{:#mainWithLabel}} 충돌이 있습니다.',
   'object.xor':
-    '{{#label}} contains a conflict between exclusive peers {{#peersWithLabels}}',
+    '{{#label}}(이)의 배타적 피어인 {{#peersWithLabels}}간의 충돌이 있습니다.',
   'function.arity': '{{#label}}(은)는 {{#n}}개의 인수가 있어야 합니다.',
   'function.class': '{{#label}}(은)는 클래스이여야 합니다.',
   'function.maxArity': '{{#label}}(은)는 {{#n}}개 이하의 인수가 있어야 합니다.',
