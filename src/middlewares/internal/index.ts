@@ -47,7 +47,7 @@ export function InternalMiddleware(): Callback {
       logger.info(
         `[Internal] [${payload.iss}] ${payload.aud} - ${req.method} ${req.originalUrl}`
       );
-    } catch (err) {
+    } catch (err: any) {
       if (process.env.NODE_ENV !== 'prod') {
         logger.error(err.message);
         logger.error(err.stack);

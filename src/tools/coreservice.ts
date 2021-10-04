@@ -15,7 +15,7 @@ function getAccountsToken(props: {
       const opts = { json: true };
       const decodedPayload: any = jwt.decode(accessKey, opts);
       if (decodedPayload.exp * 1000 > Date.now()) return accessKey;
-    } catch (err) {}
+    } catch (err: any) {}
   }
 
   const sub = 'coreservice-accounts';

@@ -194,7 +194,7 @@ export class Record {
 
         card = currentCard;
         break;
-      } catch (err) {}
+      } catch (err: any) {}
     }
 
     return { card, tid };

@@ -13,7 +13,7 @@ export function Wrapper(cb: Callback): Callback {
   return async function (req: Request, res: Response, next: NextFunction) {
     try {
       return await cb(req, res, next);
-    } catch (err) {
+    } catch (err: any) {
       if (process.env.NODE_ENV !== 'prod') {
         logger.error(err.message);
         logger.error(err.stack);

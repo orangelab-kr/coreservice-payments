@@ -45,7 +45,7 @@ export function UserMiddleware(): Callback {
       };
 
       next();
-    } catch (err) {
+    } catch (err: any) {
       if (process.env.NODE_ENV !== 'prod') {
         logger.error(err.message);
         logger.error(err.stack);
