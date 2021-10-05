@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/node';
 import { NextFunction, Request, Response } from 'express';
 import i18n from 'i18n';
 import { ValidationError } from 'joi';
-import { RESULT } from '.';
+import { logger, RESULT } from '.';
 
 i18n.configure({
   defaultLocale: 'en',
@@ -61,8 +61,17 @@ export function Wrapper(cb: WrapperCallback): WrapperCallback {
       let eventId: string | undefined;
       let result: WrapperResult;
 
-      if (err instanceof WrapperResult) result = err;
-      else result = RESULT.INVALID_ERROR();
+      if (err instanceof WrapperResult) {
+        result = err;
+      } else {
+        if (process.env.NODE_ENV !== 'prod') {
+          logger.error(err.message);
+          logger.error(err.stack);
+        }
+
+        result = RESULT.INVALID_ERROR();
+      }
+
       if (err instanceof ValidationError) {
         const { details } = err;
         result = RESULT.FAILED_VALIDATE({ details: { details } });

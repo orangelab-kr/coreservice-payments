@@ -25,6 +25,5 @@
   "REQUIRED_CARD": "The card must be registered.",
   "HAS_UNPAID_RECORD": "There is a history of failed payments.",
   "DUPLICATED_CARD": "This card has already been registered.",
-  "CANNOT_FIND_CARD": "The card does not exist.",
-  "CANNOT_FIND_USER": "User does not exist."
+  "CANNOT_FIND_CARD": "The card does not exist."
 }
