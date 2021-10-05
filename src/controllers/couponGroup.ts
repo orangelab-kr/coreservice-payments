@@ -1,10 +1,10 @@
 import { CouponGroupModel, CouponGroupType, Prisma } from '@prisma/client';
+import Joi from 'joi';
 import {
   $$$,
   Coupon,
   CouponProperties,
   getPlatformClient,
-  Joi,
   prisma,
   RESULT,
 } from '..';
@@ -40,7 +40,7 @@ export class CouponGroup {
     description: string;
     properties: CouponGroupProperties;
   }): Promise<() => Prisma.Prisma__CouponGroupModelClient<CouponGroupModel>> {
-    const schema = await Joi.object({
+    const schema = Joi.object({
       code: Joi.string().allow(null).optional(),
       name: Joi.string().min(2).max(16).required(),
       type: Joi.string()
@@ -49,17 +49,39 @@ export class CouponGroup {
       validity: Joi.number().allow(null).optional(),
       limit: Joi.number().allow(null).optional(),
       description: Joi.string().default('').allow('').optional(),
-      properties: Joi.object().optional(),
+      properties: Joi.object()
+        .optional()
+        .keys({
+          openapi: Joi.object().optional().keys({
+            discountGroupId: Joi.string().uuid().required(),
+          }),
+          coreservice: Joi.object()
+            .optional()
+            .keys({
+              // 요일을 bitmask 로 표현한 값
+              dayOfWeek: Joi.number().allow(null).optional(),
+              /** N일에 N회 사용 가능
+               *
+               * period: 기간(일)에 N회 사용 가능(기본: 무제한)
+               * count: N일에 count회 사용 가능(기본: 무제한)
+               */
+              period: Joi.number().allow(null).optional(),
+              count: Joi.number().allow(null).optional(),
+              time: Joi.array()
+                .allow(null)
+                .items(
+                  Joi.array()
+                    .items(Joi.number().required(), Joi.number().required())
+                    .required()
+                )
+                .optional(),
+            }),
+        }),
     });
 
     const { code, name, type, description, validity, limit, properties } =
       await schema.validateAsync(props);
-
-    await Promise.all([
-      this.isUnusedCouponGroupNameOrThrow(name),
-      this.isUnusedCouponGroupCodeOrThrow(code),
-    ]);
-
+    if (code) await this.isUnusedCouponGroupCodeOrThrow(code);
     if (properties) {
       const { openapi } = <CouponGroupProperties>properties;
       if (openapi) {
@@ -71,6 +93,85 @@ export class CouponGroup {
 
     return () =>
       prisma.couponGroupModel.create({
+        data: {
+          code,
+          name,
+          type,
+          validity,
+          limit,
+          description,
+          properties,
+        },
+      });
+  }
+
+  public static async modifyCouponGroup(
+    couponGroup: CouponGroupModel,
+    props: {
+      code?: string;
+      name?: string;
+      description?: string;
+      properties?: CouponGroupProperties;
+    }
+  ): Promise<() => Prisma.Prisma__CouponGroupModelClient<CouponGroupModel>> {
+    const schema = Joi.object({
+      code: Joi.string().allow(null).optional(),
+      name: Joi.string().min(2).max(16).optional(),
+      type: Joi.string()
+        .valid(...Object.values(CouponGroupType))
+        .required(),
+      validity: Joi.number().allow(null).optional(),
+      limit: Joi.number().allow(null).optional(),
+      description: Joi.string().default('').allow('').optional(),
+      properties: Joi.object()
+        .optional()
+        .keys({
+          openapi: Joi.object().optional().keys({
+            discountGroupId: Joi.string().uuid().required(),
+          }),
+          coreservice: Joi.object()
+            .optional()
+            .keys({
+              // 요일을 bitmask 로 표현한 값
+              dayOfWeek: Joi.number().allow(null).optional(),
+              /** N일에 N회 사용 가능
+               *
+               * period: 기간(일)에 N회 사용 가능(기본: 무제한)
+               * count: N일에 count회 사용 가능(기본: 무제한)
+               */
+              period: Joi.number().allow(null).optional(),
+              count: Joi.number().allow(null).optional(),
+              time: Joi.array()
+                .allow(null)
+                .items(
+                  Joi.array()
+                    .items(Joi.number().required(), Joi.number().required())
+                    .required()
+                )
+                .optional(),
+            }),
+        }),
+    });
+
+    const { code, name, type, description, validity, limit, properties } =
+      await schema.validateAsync(props);
+    if (code && couponGroup.code !== code) {
+      await this.isUnusedCouponGroupCodeOrThrow(code);
+    }
+
+    if (properties) {
+      const { openapi } = <CouponGroupProperties>properties;
+      if (openapi) {
+        await getPlatformClient()
+          .get(`discount/discountGroups/${openapi.discountGroupId}`)
+          .json<{ opcode: number; discountGroup: OpenApiDiscountGroup }>();
+      }
+    }
+
+    const { couponGroupId } = couponGroup;
+    return () =>
+      prisma.couponGroupModel.update({
+        where: { couponGroupId },
         data: {
           code,
           name,
@@ -114,18 +215,6 @@ export class CouponGroup {
     const couponGroup = await $$$(this.getCouponGroupByCode(code));
     if (!couponGroup) throw RESULT.CANNOT_FIND_COUPON_GROUP();
     return couponGroup;
-  }
-
-  public static async isUnusedCouponGroupName(name: string): Promise<boolean> {
-    const exists = await prisma.couponGroupModel.count({ where: { name } });
-    return exists <= 0;
-  }
-
-  public static async isUnusedCouponGroupNameOrThrow(
-    name: string
-  ): Promise<void> {
-    const unused = await this.isUnusedCouponGroupName(name);
-    if (!unused) throw RESULT.DUPLICATED_COUPON_GROUP_NAME();
   }
 
   public static async isUnusedCouponGroupCode(code: string): Promise<boolean> {
@@ -178,7 +267,6 @@ export class CouponGroup {
       take: Joi.number().default(10).optional(),
       skip: Joi.number().default(0).optional(),
       search: Joi.string().default('').allow('').optional(),
-      showUsed: Joi.boolean().default(true).optional(),
       orderByField: Joi.string()
         .valid('createdAt')
         .default('createdAt')
@@ -209,5 +297,13 @@ export class CouponGroup {
     ]);
 
     return { total, couponGroups };
+  }
+
+  public static async deleteCouponGroup(
+    couponGroup: CouponGroupModel
+  ): Promise<() => Prisma.Prisma__CouponGroupModelClient<CouponGroupModel>> {
+    const { couponGroupId } = couponGroup;
+    await prisma.couponModel.deleteMany({ where: { couponGroupId } });
+    return () => prisma.couponGroupModel.delete({ where: { couponGroupId } });
   }
 }

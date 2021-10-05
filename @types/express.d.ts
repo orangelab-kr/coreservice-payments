@@ -1,5 +1,5 @@
-import 'express';
 import { CardModel, RecordModel } from '@prisma/client';
+import 'express';
 import { UserModel } from '../src';
 
 declare global {
@@ -20,6 +20,7 @@ declare global {
         user: UserModel;
         record: RecordModel;
         coupon: CouponModel;
+        couponGroup: CouponGroupModel;
       };
     }
   }
