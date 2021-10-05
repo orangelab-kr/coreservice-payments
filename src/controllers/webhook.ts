@@ -168,7 +168,7 @@ export class Webhook {
       description,
       ride: { userId, kickboardCode },
     } = payload.data;
-    const { user } = await getAccountsClient()
+    await getAccountsClient()
       .get(`users/${userId}`)
       .json<{ opcode: number; user: UserModel }>();
 
@@ -178,7 +178,8 @@ export class Webhook {
 
     const type = payload.data.paymentType === 'SERVICE' ? '이용료' : '추가금';
     const record = await $$$(
-      Record.createThenPayRecord(user, {
+      Record.createThenPayRecord({
+        userId,
         properties,
         amount: payload.data.amount,
         name: `[${type}] ${kickboardCode} 킥보드`,

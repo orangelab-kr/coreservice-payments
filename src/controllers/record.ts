@@ -5,9 +5,11 @@ import {
   PrismaPromise,
   RecordModel,
 } from '@prisma/client';
+import dayjs from 'dayjs';
 import {
   $$$,
   Card,
+  getAccountsClient,
   getPlatformClient,
   Joi,
   Jtnet,
@@ -35,21 +37,23 @@ export interface RecordProperties {
 
 export class Record {
   // 결제 레코드 생성 후 결제 시도 및 데이터베이스 업데이트
-  public static async createThenPayRecord(
-    user: UserModel,
-    props: {
-      paymentKeyId?: string; // 결제할 가맹점
-      amount: number; // 결제할 금액
-      name: string; // 제품명
-      description?: string; // 설명
-      required?: boolean; // 필수 여부
-      properties?: RecordProperties; // 기타 속성
-    }
-  ): Promise<() => Prisma.Prisma__RecordModelClient<RecordModel>> {
-    const { amount, name, description, required, properties } = props;
+  public static async createThenPayRecord(props: {
+    userId: string;
+    paymentKeyId?: string; // 결제할 가맹점
+    amount: number; // 결제할 금액
+    name: string; // 제품명
+    description?: string; // 설명
+    required?: boolean; // 필수 여부
+    properties?: RecordProperties; // 기타 속성
+  }): Promise<() => Prisma.Prisma__RecordModelClient<RecordModel>> {
+    const { amount, name, description, required, properties, userId } = props;
     const paymentKey = props.paymentKeyId
       ? await Jtnet.getPaymentKey(props.paymentKeyId)
       : await Jtnet.getPrimaryPaymentKey();
+
+    const { user } = await getAccountsClient()
+      .get(`users/${userId}`)
+      .json<{ opcode: number; user: UserModel }>();
 
     const { paymentKeyId } = paymentKey;
     const record = await $$$(
@@ -218,11 +222,11 @@ export class Record {
   }
 
   public static async getRecords(
-    user: UserModel,
     props: {
       take?: number;
       skip?: number;
       search?: string;
+      userId?: string;
       orderByField?:
         | 'amount'
         | 'refundedAt'
@@ -231,12 +235,14 @@ export class Record {
         | 'createdAt'
         | 'updatedAt';
       orderBySort?: 'asc' | 'desc';
-    }
+    },
+    user?: UserModel
   ): Promise<{ records: RecordModel[]; total: number }> {
     const schema = Joi.object({
       take: Joi.number().default(10).optional(),
       skip: Joi.number().default(0).optional(),
       search: Joi.string().allow('').default('').optional(),
+      userId: Joi.string().uuid().optional(),
       orderByField: Joi.string()
         .default('createdAt')
         .valid(
@@ -251,12 +257,10 @@ export class Record {
       orderBySort: Joi.string().valid('asc', 'desc').default('desc').optional(),
     });
 
-    const { take, skip, search, orderByField, orderBySort } =
+    const { take, skip, search, userId, orderByField, orderBySort } =
       await schema.validateAsync(props);
 
-    const { userId } = user;
     const where: Prisma.RecordModelWhereInput = {
-      userId,
       OR: [
         { recordId: search },
         { userId: search },
@@ -268,6 +272,8 @@ export class Record {
       ],
     };
 
+    if (userId) where.userId = userId;
+    if (user) where.userId = user.userId;
     const orderBy = { [orderByField]: orderBySort };
     const [total, records] = await prisma.$transaction([
       prisma.recordModel.count({ where }),
@@ -283,10 +289,10 @@ export class Record {
   }
 
   public static async getRecord(
-    user: UserModel,
-    recordId: string
+    recordId: string,
+    user?: UserModel
   ): Promise<() => Prisma.Prisma__RecordModelClient<RecordModel | null>> {
-    const { userId } = user;
+    const userId = user?.userId;
     return () =>
       prisma.recordModel.findFirst({
         where: { userId, recordId },
@@ -294,10 +300,10 @@ export class Record {
   }
 
   public static async getRecordOrThrow(
-    user: UserModel,
-    recordId: string
+    recordId: string,
+    user?: UserModel
   ): Promise<RecordModel> {
-    const record = await $$$(this.getRecord(user, recordId));
+    const record = await $$$(this.getRecord(recordId, user));
     if (!record) throw RESULT.CANNOT_FIND_RECORD();
     return record;
   }

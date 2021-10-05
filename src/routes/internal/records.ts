@@ -7,12 +7,8 @@ export function getInternalRecordsRouter(): Router {
   router.get(
     '/',
     Wrapper(async (req) => {
-      const {
-        query,
-        internal: { user },
-      } = req;
-
-      const { records, total } = await Record.getRecords(user, query);
+      const { query } = req;
+      const { records, total } = await Record.getRecords(query);
       throw RESULT.SUCCESS({ details: { records, total } });
     })
   );
@@ -20,12 +16,8 @@ export function getInternalRecordsRouter(): Router {
   router.post(
     '/',
     Wrapper(async (req) => {
-      const {
-        body,
-        internal: { user },
-      } = req;
-
-      const record = await $$$(Record.createThenPayRecord(user, body));
+      const { body } = req;
+      const record = await $$$(Record.createThenPayRecord(body));
       throw RESULT.SUCCESS({ details: { record } });
     })
   );

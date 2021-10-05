@@ -1,39 +1,15 @@
 import { Router } from 'express';
-import {
-  Card,
-  getInternalCouponsRouter,
-  getInternalRecordsRouter,
-  InternalUserMiddleware,
-  RESULT,
-  Wrapper,
-} from '../..';
+import { getInternalRecordsRouter, getInternalUsersRouter } from '..';
 
-export * from './coupons';
+export * from './users';
 export * from './records';
+export * from './couponGroups';
 
 export function getInternalRouter(): Router {
   const router = Router();
 
-  router.use(
-    '/:userId/records',
-    InternalUserMiddleware(),
-    getInternalRecordsRouter()
-  );
-
-  router.use(
-    '/:userId/coupons',
-    InternalUserMiddleware(),
-    getInternalCouponsRouter()
-  );
-
-  router.get(
-    '/:userId/ready',
-    InternalUserMiddleware(),
-    Wrapper(async (req, res) => {
-      await Card.checkReady(req.internal.user);
-      throw RESULT.SUCCESS();
-    })
-  );
+  router.use('/users', getInternalUsersRouter());
+  router.use('/records', getInternalRecordsRouter());
 
   return router;
 }

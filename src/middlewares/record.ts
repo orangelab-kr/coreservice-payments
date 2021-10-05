@@ -11,7 +11,7 @@ export function RecordMiddleware(): WrapperCallback {
       throw RESULT.CANNOT_FIND_RECORD();
     }
 
-    req.record = await Record.getRecordOrThrow(user, recordId);
+    req.record = await Record.getRecordOrThrow(recordId, user);
     next();
   });
 }

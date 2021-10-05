@@ -8,7 +8,7 @@ export function getRecordsRouter(): Router {
     '/',
     Wrapper(async (req) => {
       const { query, user } = req;
-      const { total, records } = await Record.getRecords(user, query);
+      const { total, records } = await Record.getRecords(query, user);
       throw RESULT.SUCCESS({ details: { records, total } });
     })
   );
