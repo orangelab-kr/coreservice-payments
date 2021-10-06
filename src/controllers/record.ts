@@ -5,11 +5,10 @@ import {
   PrismaPromise,
   RecordModel,
 } from '@prisma/client';
-import dayjs from 'dayjs';
 import {
   $$$,
   Card,
-  getAccountsClient,
+  getCoreServiceClient,
   getPlatformClient,
   Joi,
   Jtnet,
@@ -33,6 +32,10 @@ export interface RecordProperties {
     updatedAt: Date;
     deletedAt: null;
   };
+  coreservice?: {
+    passId?: string;
+    passProgramId?: string;
+  };
 }
 
 export class Record {
@@ -51,7 +54,7 @@ export class Record {
       ? await Jtnet.getPaymentKey(props.paymentKeyId)
       : await Jtnet.getPrimaryPaymentKey();
 
-    const { user } = await getAccountsClient()
+    const { user } = await getCoreServiceClient('accounts')
       .get(`users/${userId}`)
       .json<{ opcode: number; user: UserModel }>();
 

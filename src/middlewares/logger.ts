@@ -23,7 +23,7 @@ export function LoggerMiddleware(): WrapperCallback {
 (SC: ${statusCode}, IP: "${ipAddress}", UA: "${userAgent}", CL: ${contentLength})`
         );
       } else {
-        logger.info(`[${httpVersion}] ${method} ${url} - ${time}`);
+        logger.info(`${httpVersion} / ${method} ${url} - ${time}`);
         logger.info(`- Status Code: ${statusCode}`);
         logger.info(`- IP Address: ${ipAddress}`);
         logger.info(`- User Agent: ${userAgent}`);

@@ -1,6 +1,6 @@
 import {
   $$$,
-  getAccountsClient,
+  getCoreServiceClient,
   Record,
   RecordProperties,
   UserModel,
@@ -168,7 +168,8 @@ export class Webhook {
       description,
       ride: { userId, kickboardCode },
     } = payload.data;
-    await getAccountsClient()
+
+    await getCoreServiceClient('accounts')
       .get(`users/${userId}`)
       .json<{ opcode: number; user: UserModel }>();
 
@@ -195,7 +196,7 @@ export class Webhook {
       paymentId,
       ride: { userId },
     } = payload.data;
-    const { user } = await getAccountsClient()
+    const { user } = await await getCoreServiceClient('accounts')
       .get(`users/${userId}`)
       .json<{ opcode: number; user: UserModel }>();
 

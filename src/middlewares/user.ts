@@ -1,6 +1,6 @@
 import dayjs, { Dayjs } from 'dayjs';
 import {
-  getAccountsClient,
+  getCoreServiceClient,
   logger,
   RESULT,
   Wrapper,
@@ -19,15 +19,13 @@ export interface UserModel {
 }
 
 export function UserMiddleware(): WrapperCallback {
-  const accountsClient = getAccountsClient();
-
   return Wrapper(async (req, res, next) => {
     try {
       const { headers } = req;
       const { authorization } = headers;
       if (typeof authorization !== 'string') throw Error();
       const sessionId = authorization.substr(7);
-      const { user } = await accountsClient
+      const { user } = await getCoreServiceClient('accounts')
         .post(`users/authorize`, { json: { sessionId } })
         .json();
 

@@ -1,13 +1,13 @@
 import * as Sentry from '@sentry/node';
 import { NextFunction, Request, Response } from 'express';
 import i18n from 'i18n';
-import { ValidationError } from 'joi';
 import { logger, RESULT } from '.';
 
 i18n.configure({
   defaultLocale: 'en',
   locales: ['en', 'ko'],
   directory: 'locales',
+  queryParameter: 'lang',
   updateFiles: false,
 });
 
@@ -18,8 +18,8 @@ export type WrapperCallback = (
 ) => Promise<unknown>;
 
 export type WrapperResultProps = WrapperResultLazyProps & {
-  opcode: number;
-  statusCode: number;
+  opcode?: number;
+  statusCode?: number;
   message?: string;
   reportable?: boolean;
   details?: any;
@@ -44,8 +44,8 @@ export class WrapperResult extends Error {
 
   public constructor(props: WrapperResultProps) {
     super();
-    this.opcode = props.opcode;
-    this.statusCode = props.statusCode || 500;
+    this.opcode = props.opcode || 0;
+    this.statusCode = props.statusCode || 200;
     this.reportable = props.reportable || false;
     this.details = props.details || {};
     this.args = props.args || [];
@@ -59,22 +59,21 @@ export function Wrapper(cb: WrapperCallback): WrapperCallback {
   return async (req: Request, res: Response, next: NextFunction) => {
     return cb(req, res, next).catch((err) => {
       let eventId: string | undefined;
-      let result: WrapperResult;
+      let result: WrapperResult | undefined;
 
-      if (err instanceof WrapperResult) {
-        result = err;
-      } else {
+      if (err.name === 'Result') result = err;
+      if (err.name === 'ValidationError') {
+        const { details } = err;
+        result = RESULT.FAILED_VALIDATE({ details: { details } });
+      }
+
+      if (!result) {
         if (process.env.NODE_ENV !== 'prod') {
           logger.error(err.message);
           logger.error(err.stack);
         }
 
         result = RESULT.INVALID_ERROR();
-      }
-
-      if (err instanceof ValidationError) {
-        const { details } = err;
-        result = RESULT.FAILED_VALIDATE({ details: { details } });
       }
 
       const { statusCode, opcode, details, reportable, args } = result;
