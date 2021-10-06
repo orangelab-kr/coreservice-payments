@@ -32,7 +32,19 @@ export function getInternalUsersCouponsRouter(): Router {
     '/',
     Wrapper(async (req) => {
       const { user } = req.internal;
-      const coupon = await $$$(Coupon.enrollCoupon(user, req.body.code));
+      const coupon = await $$$(
+        Coupon.enrollCouponByCouponGroupId(user, req.body)
+      );
+
+      throw RESULT.SUCCESS({ details: { coupon } });
+    })
+  );
+
+  router.post(
+    '/byCode',
+    Wrapper(async (req) => {
+      const { user } = req.internal;
+      const coupon = await $$$(Coupon.enrollCouponByCode(user, req.body));
       throw RESULT.SUCCESS({ details: { coupon } });
     })
   );

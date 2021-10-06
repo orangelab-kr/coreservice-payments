@@ -33,7 +33,7 @@ export function getCouponsRouter(): Router {
   router.post(
     '/',
     Wrapper(async (req) => {
-      const coupon = await $$$(Coupon.enrollCoupon(req.user, req.body.code));
+      const coupon = await $$$(Coupon.enrollCouponByCode(req.user, req.body));
       throw RESULT.SUCCESS({ details: { coupon } });
     })
   );

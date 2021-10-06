@@ -228,12 +228,35 @@ export class Coupon {
     return properties;
   }
 
+  public static async enrollCouponByCode(
+    user: UserModel,
+    props: { code: string }
+  ): Promise<() => Prisma.Prisma__CouponModelClient<CouponModel>> {
+    const { code } = await Joi.object({
+      code: Joi.string().required(),
+    }).validateAsync(props);
+
+    const couponGroup = await CouponGroup.getCouponGroupByCodeOrThrow(code);
+    return Coupon.enrollCoupon(user, couponGroup);
+  }
+
+  public static async enrollCouponByCouponGroupId(
+    user: UserModel,
+    props: { couponGroupId: string }
+  ): Promise<() => Prisma.Prisma__CouponModelClient<CouponModel>> {
+    const { couponGroupId } = await Joi.object({
+      couponGroupId: Joi.string().uuid().required(),
+    }).validateAsync(props);
+
+    const couponGroup = await CouponGroup.getCouponGroupOrThrow(couponGroupId);
+    return Coupon.enrollCoupon(user, couponGroup);
+  }
+
   public static async enrollCoupon(
     user: UserModel,
-    code: string
+    couponGroup: CouponGroupModel
   ): Promise<() => Prisma.Prisma__CouponModelClient<CouponModel>> {
     const { userId } = user;
-    const couponGroup = await CouponGroup.getCouponGroupByCodeOrThrow(code);
     const { couponGroupId, limit } = couponGroup;
 
     if (limit) {
