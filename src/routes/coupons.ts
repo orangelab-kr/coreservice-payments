@@ -38,5 +38,14 @@ export function getCouponsRouter(): Router {
     })
   );
 
+  router.delete(
+    '/:couponId',
+    CouponMiddleware(),
+    Wrapper(async (req) => {
+      await $$$(Coupon.deleteCoupon(req.coupon));
+      throw RESULT.SUCCESS();
+    })
+  );
+
   return router;
 }

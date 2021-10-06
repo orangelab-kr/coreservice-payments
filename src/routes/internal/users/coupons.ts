@@ -70,5 +70,14 @@ export function getInternalUsersCouponsRouter(): Router {
     })
   );
 
+  router.delete(
+    '/:couponId',
+    InternalCouponMiddleware(),
+    Wrapper(async (req) => {
+      await $$$(Coupon.deleteCoupon(req.internal.coupon));
+      throw RESULT.SUCCESS();
+    })
+  );
+
   return router;
 }

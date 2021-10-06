@@ -316,4 +316,11 @@ export class Coupon {
     const { userId } = user;
     return () => prisma.couponModel.count({ where: { userId, couponGroupId } });
   }
+
+  public static async deleteCoupon(
+    coupon: CouponModel
+  ): Promise<() => Prisma.Prisma__CouponModelClient<CouponModel>> {
+    const { couponId } = coupon;
+    return () => prisma.couponModel.delete({ where: { couponId } });
+  }
 }
