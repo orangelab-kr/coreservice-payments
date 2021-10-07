@@ -17,6 +17,24 @@ import {
   UserModel,
 } from '..';
 
+export interface RideModel {
+  rideId: string;
+  userId: string;
+  kickboardCode: string;
+  photo: string | null;
+  couponId: string | null;
+  properties: {
+    openapi: {
+      rideId: string;
+    };
+  };
+  price: number;
+  endedAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: null;
+}
+
 export interface RecordProperties {
   openapi?: {
     paymentId: string;
@@ -33,6 +51,7 @@ export interface RecordProperties {
     deletedAt: null;
   };
   coreservice?: {
+    rideId?: string;
     passId?: string;
     passProgramId?: string;
   };
@@ -76,6 +95,30 @@ export class Record {
       required,
       paymentKey,
     });
+  }
+
+  public static async modifyRide(
+    ride: RideModel,
+    props: {
+      price?: number;
+      userId?: string;
+      kickboardCode?: string;
+      properties?: any;
+    }
+  ): Promise<RideModel> {
+    return getCoreServiceClient('ride')
+      .post(`rides/${ride.rideId}`, { json: props })
+      .json<{ opcode: number; ride: RideModel }>()
+      .then((res) => res.ride);
+  }
+
+  public static async getRideByOpenAPIRideId(
+    rideId: string
+  ): Promise<RideModel> {
+    return getCoreServiceClient('ride')
+      .get(`rides/byOpenAPI/${rideId}`)
+      .json<{ opcode: number; ride: RideModel }>()
+      .then((res) => res.ride);
   }
 
   public static async createRecord(
@@ -352,5 +395,16 @@ export class Record {
           reason,
         },
       });
+  }
+
+  public static async updateRidePrice(ride: RideModel): Promise<void> {
+    const { rideId }: any = ride.properties.openapi;
+    const properties = { path: '$.openapi.rideId', equals: rideId };
+    const price = await prisma.recordModel
+      .findMany({ where: { properties, refundedAt: null } })
+      .then((records) => records.map((record) => record.amount))
+      .then((amount) => amount.reduce((a, b) => a + b));
+
+    await Record.modifyRide(ride, { price });
   }
 }

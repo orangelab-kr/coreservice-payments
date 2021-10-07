@@ -164,44 +164,45 @@ export interface WebhookRefund {
 
 export class Webhook {
   public static async onPayment(payload: WebhookPayment): Promise<void> {
-    const {
-      description,
-      ride: { userId, kickboardCode },
-    } = payload.data;
-
+    const { data } = payload;
+    const ride = await Record.getRideByOpenAPIRideId(data.rideId);
     await getCoreServiceClient('accounts')
-      .get(`users/${userId}`)
+      .get(`users/${data.ride.userId}`)
       .json<{ opcode: number; user: UserModel }>();
 
     const properties: RecordProperties = {
-      openapi: <any>{ ...payload.data, ride: undefined },
+      coreservice: { rideId: ride.rideId },
+      openapi: <any>{ ...data, ride: undefined },
     };
 
-    const type = payload.data.paymentType === 'SERVICE' ? '이용료' : '추가금';
+    const type = data.paymentType === 'SERVICE' ? '이용료' : '추가금';
     const record = await $$$(
       Record.createThenPayRecord({
-        userId,
+        userId: data.ride.userId,
+        amount: data.amount,
+        name: `[${type}] ${data.ride.kickboardCode} 킥보드`,
+        description: data.description,
         properties,
-        amount: payload.data.amount,
-        name: `[${type}] ${kickboardCode} 킥보드`,
-        description,
       })
     );
 
     await Record.setOpenApiProcessed(record);
+    await Record.updateRidePrice(ride).catch(() => null);
   }
 
   public static async onRefund(payload: WebhookPayment): Promise<void> {
     const {
       paymentId,
-      ride: { userId },
+      ride: { userId, rideId },
     } = payload.data;
-    const { user } = await await getCoreServiceClient('accounts')
+    const ride = await Record.getRideByOpenAPIRideId(rideId);
+    const { user } = await getCoreServiceClient('accounts')
       .get(`users/${userId}`)
       .json<{ opcode: number; user: UserModel }>();
 
     const record = await Record.getRecordByPaymentIdOrThrow(user, paymentId);
     await $$$(Record.refundRecord(record));
     await Record.setOpenApiProcessed(record);
+    await Record.updateRidePrice(ride).catch(() => null);
   }
 }

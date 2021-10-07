@@ -35,7 +35,7 @@ export function InternalMiddleware(): WrapperCallback {
       req.internal = payload;
       if (exp.diff(iat, 'hours') > 6) throw RESULT.EXPIRED_ACCESS_KEY();
       logger.info(
-        `[Internal] [${payload.iss}] ${payload.aud} - ${req.method} ${req.originalUrl}`
+        `Internal / ${payload.aud}(${payload.iss}) - ${req.method} ${req.originalUrl}`
       );
     } catch (err: any) {
       if (process.env.NODE_ENV !== 'prod') {
