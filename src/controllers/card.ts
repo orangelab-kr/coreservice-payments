@@ -110,9 +110,19 @@ export class Card {
     const { billingKey, cardName } = await Jtnet.createBillingKey(props);
     await this.isUnregisteredCardOrThrow(user, cardName);
     const { length: orderBy } = await $$$(this.getCards(user));
-    return () =>
+    return (): any =>
       prisma.cardModel.create({
         data: { userId, billingKey, cardName, orderBy },
+        select: {
+          cardId: true,
+          userId: true,
+          orderBy: true,
+          cardName: true,
+          billingKey: false,
+          createdAt: true,
+          updatedAt: true,
+          deletedAt: true,
+        },
       });
   }
 

@@ -10,7 +10,7 @@ import { RESULT, WrapperResult } from '.';
 
 const retry = 0;
 const email = 'system@hikick.kr';
-const issuer = process.env.HIKICK_CORESERVICE_PAYMENTS_KEY;
+const issuer = process.env.HIKICK_CORESERVICE_PAYMENTS_URL;
 const tokens: { [key: string]: string } = {};
 const services: { [key: string]: Got } = {};
 

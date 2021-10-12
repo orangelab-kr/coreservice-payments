@@ -2,7 +2,6 @@
   "REQUIRED_ACCESS_KEY": "This service requires authentication.",
   "EXPIRED_ACCESS_KEY": "Your access token has expired.",
   "PERMISSION_DENIED": "You do not have permission. (%s)",
-  "REQUIRED_LOGIN": "This service requires a login.",
   "INVALID_ERROR": "An unknown error has occurred.",
   "FAILED_VALIDATE": "Please enter the correct information.",
   "INVALID_API": "Invalid API address.",

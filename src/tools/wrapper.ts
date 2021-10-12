@@ -57,7 +57,9 @@ export class WrapperResult extends Error {
 
 export function Wrapper(cb: WrapperCallback): WrapperCallback {
   return async (req: Request, res: Response, next: NextFunction) => {
-    return cb(req, res, next).catch((err) => {
+    try {
+      return await cb(req, res, next);
+    } catch (err: any) {
       let eventId: string | undefined;
       let result: WrapperResult | undefined;
 
@@ -89,6 +91,6 @@ export function Wrapper(cb: WrapperCallback): WrapperCallback {
         message,
         ...details,
       });
-    });
+    }
   };
 }
