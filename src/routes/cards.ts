@@ -12,6 +12,15 @@ export function getCardsRouter(): Router {
     })
   );
 
+  router.get(
+    '/:cardId',
+    CardMiddleware(),
+    Wrapper(async (req) => {
+      const { card } = req;
+      throw RESULT.SUCCESS({ details: { card } });
+    })
+  );
+
   router.post(
     '/',
     Wrapper(async (req) => {

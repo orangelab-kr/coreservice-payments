@@ -4,7 +4,6 @@ import i18n from 'i18n';
 import serverless from 'serverless-http';
 import {
   getRouter,
-  prisma,
   LoggerMiddleware,
   registerSentry,
   RESULT,
