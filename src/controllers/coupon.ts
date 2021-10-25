@@ -283,7 +283,7 @@ export class Coupon {
 
     // 쿠폰 그룹에 만료일이 있을 경우, 할인의 만료 정보를 무시한다.
     if (couponGroup.validity) {
-      expiredAt = dayjs().add(couponGroup.validity, 'ms').toDate();
+      expiredAt = dayjs().add(couponGroup.validity, 's').toDate();
     }
 
     const properties = <any>couponProps;
