@@ -164,9 +164,10 @@ export class Jtnet {
       throw RESULT.CARD_IS_NOT_VALID({ args: [res.result_msg] });
     }
 
+    const cardNum = res.card_num.substr(res.card_num.length - 4);
     return {
       billingKey: res.card_token,
-      cardName: `${res.card_name} ${res.card_num}`,
+      cardName: `${res.card_name}(${cardNum})`,
     };
   }
 }

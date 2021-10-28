@@ -1,3 +1,5 @@
+import { RecordModel } from '.prisma/client';
+import { Card } from '.';
 import {
   $$$,
   getCoreServiceClient,
@@ -165,44 +167,83 @@ export interface WebhookRefund {
 export class Webhook {
   public static async onPayment(payload: WebhookPayment): Promise<void> {
     const { data } = payload;
-    const ride = await Record.getRideByOpenAPIRideId(data.rideId);
-    await getCoreServiceClient('accounts')
-      .get(`users/${data.ride.userId}`)
-      .json<{ opcode: number; user: UserModel }>();
+    const [ride, user] = await Promise.all([
+      Record.getRideByOpenAPIRideId(data.rideId),
+      getCoreServiceClient('accounts')
+        .get(`users/${data.ride.userId}`)
+        .json<{ user: UserModel }>()
+        .then(({ user }) => user),
+    ]);
 
+    const { rideId } = ride;
+    const { userId } = user;
     const properties: RecordProperties = {
-      coreservice: { rideId: ride.rideId },
+      coreservice: { rideId },
       openapi: <any>{ ...data, ride: undefined },
     };
 
     const type = data.paymentType === 'SERVICE' ? '이용료' : '추가금';
-    const record = await $$$(
+    const recordName = `${type}(${data.ride.kickboardCode})`;
+    const record: RecordModel = await $$$(
       Record.createThenPayRecord({
-        userId: data.ride.userId,
+        userId: user.userId,
         amount: data.amount,
-        name: `[${type}] ${data.ride.kickboardCode} 킥보드`,
+        name: recordName,
         description: data.description,
         properties,
       })
     );
 
+    const { amount, cardId } = record;
     await Record.setOpenApiProcessed(record);
     await Record.updateRidePrice(ride).catch(() => null);
+    if (record.processedAt && cardId) {
+      const { cardName } = await Card.getCardOrThrow(user, cardId);
+      await getCoreServiceClient('accounts').post({
+        url: `users/${userId}/notifications`,
+        json: {
+          type: 'info',
+          title: `🧾 ${recordName} ${amount.toLocaleString()}원 / 결제 완료`,
+          description: `${cardName} 카드로 ${type} 결제를 성공하였습니다.`,
+        },
+      });
+    } else {
+      await getCoreServiceClient('accounts').post({
+        url: `users/${userId}/notifications`,
+        json: {
+          type: 'info',
+          title: `🧾 ${recordName} ${amount.toLocaleString()}원 / 결제 실패`,
+          description: `${type} 결제를 실패하였습니다. 결제 내역에서 결제를 완료해주세요.`,
+        },
+      });
+    }
   }
 
   public static async onRefund(payload: WebhookPayment): Promise<void> {
-    const {
-      paymentId,
-      ride: { userId, rideId },
-    } = payload.data;
-    const ride = await Record.getRideByOpenAPIRideId(rideId);
-    const { user } = await getCoreServiceClient('accounts')
-      .get(`users/${userId}`)
-      .json<{ opcode: number; user: UserModel }>();
+    const { data } = payload;
+    const ride = await Record.getRideByOpenAPIRideId(data.ride.rideId);
+    const user = await getCoreServiceClient('accounts')
+      .get(`users/${ride.userId}`)
+      .json<{ user: UserModel }>()
+      .then(({ user }) => user);
 
-    const record = await Record.getRecordByPaymentIdOrThrow(user, paymentId);
+    const { userId } = user;
+    const record = await Record.getRecordByPaymentIdOrThrow(
+      user,
+      data.paymentId
+    );
+
     await $$$(Record.refundRecord(record));
     await Record.setOpenApiProcessed(record);
     await Record.updateRidePrice(ride).catch(() => null);
+    const { name, amount } = record;
+    await getCoreServiceClient('accounts').post({
+      url: `users/${userId}/notifications`,
+      json: {
+        type: 'info',
+        title: `🧾 ${name} ${amount.toLocaleString()}원 / 결제 환불`,
+        description: `결제하신 내역이 환불 처리되었습니다.`,
+      },
+    });
   }
 }
