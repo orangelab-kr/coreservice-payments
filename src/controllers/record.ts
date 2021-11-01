@@ -61,7 +61,7 @@ export class Record {
   // 결제 레코드 생성 후 결제 시도 및 데이터베이스 업데이트
   public static async createThenPayRecord(props: {
     userId: string;
-    paymentKeyId?: string; // 결제할 가맹점
+    paymentKeyId?: string | null; // 결제할 가맹점
     amount: number; // 결제할 금액
     name: string; // 제품명
     description?: string; // 설명

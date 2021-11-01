@@ -4,7 +4,7 @@ import i18n from 'i18n';
 import { logger, RESULT } from '.';
 
 i18n.configure({
-  defaultLocale: 'en',
+  defaultLocale: 'ko',
   locales: ['en', 'ko'],
   directory: 'locales',
   queryParameter: 'lang',

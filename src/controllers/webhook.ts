@@ -3,6 +3,7 @@ import { Card } from '.';
 import {
   $$$,
   getCoreServiceClient,
+  getPlatformClient,
   Record,
   RecordProperties,
   UserModel,
@@ -165,6 +166,21 @@ export interface WebhookRefund {
 }
 
 export class Webhook {
+  public static async getFranchisePaymentKeyId(
+    franchiseId: string
+  ): Promise<string | null> {
+    try {
+      const { franchise } = await getPlatformClient()
+        .get(`franchise/platform/franchises/${franchiseId}`)
+        .json();
+
+      if (!franchise) return null;
+      return franchise.paymentKeyId;
+    } catch (err: any) {
+      return null;
+    }
+  }
+
   public static async onPayment(payload: WebhookPayment): Promise<void> {
     const { data } = payload;
     const [ride, user] = await Promise.all([
@@ -175,17 +191,20 @@ export class Webhook {
         .then(({ user }) => user),
     ]);
 
-    const { rideId } = ride;
     const { userId } = user;
+    const { rideId, kickboardCode } = ride;
+    const { franchiseId } = data;
     const properties: RecordProperties = {
       coreservice: { rideId },
       openapi: <any>{ ...data, ride: undefined },
     };
 
     const type = data.paymentType === 'SERVICE' ? '이용료' : '추가금';
-    const recordName = `${type}(${data.ride.kickboardCode})`;
+    const recordName = `${type}(${kickboardCode})`;
+    const paymentKeyId = await Webhook.getFranchisePaymentKeyId(franchiseId);
     const record: RecordModel = await $$$(
       Record.createThenPayRecord({
+        paymentKeyId,
         userId: user.userId,
         amount: data.amount,
         name: recordName,
