@@ -209,6 +209,7 @@ export class Webhook {
         amount: data.amount,
         name: recordName,
         description: data.description,
+        required: false,
         properties,
       })
     );

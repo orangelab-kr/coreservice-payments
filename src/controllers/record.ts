@@ -61,14 +61,17 @@ export class Record {
   // 결제 레코드 생성 후 결제 시도 및 데이터베이스 업데이트
   public static async createThenPayRecord(props: {
     userId: string;
+    cardId?: string; // 결제할 카드
     paymentKeyId?: string | null; // 결제할 가맹점
     amount: number; // 결제할 금액
     name: string; // 제품명
     description?: string; // 설명
-    required?: boolean; // 필수 여부
+    required: boolean; // 필수 여부
     properties?: RecordProperties; // 기타 속성
   }): Promise<() => Prisma.Prisma__RecordModelClient<RecordModel>> {
-    const { amount, name, description, required, properties, userId } = props;
+    const { cardId, amount, name, description, required, properties, userId } =
+      props;
+
     const paymentKey = props.paymentKeyId
       ? await Jtnet.getPaymentKey(props.paymentKeyId)
       : await Jtnet.getPrimaryPaymentKey();
@@ -81,6 +84,7 @@ export class Record {
     const record = await $$$(
       this.createRecord(user, {
         // 결제 레코드 생성
+        cardId,
         amount,
         name,
         description,
@@ -124,6 +128,7 @@ export class Record {
   public static async createRecord(
     user: UserModel,
     props: {
+      cardId?: string;
       amount: number;
       name: string;
       paymentKeyId: string;
@@ -195,7 +200,8 @@ export class Record {
       data: { retiredAt },
     });
 
-    const { card, tid } = await this.tryPayment({ user, record });
+    const required = false;
+    const { card, tid } = await this.tryPayment({ user, record, required });
     if (!card) throw RESULT.NO_AVAILABLE_CARD();
 
     const { cardId } = card;
@@ -212,16 +218,19 @@ export class Record {
   private static async tryPayment(props: {
     user: UserModel;
     record: RecordModel;
+    required: boolean;
   }): Promise<{ card: CardModel | undefined; tid: string | undefined }> {
     let tid: string | undefined;
     let card: CardModel | undefined;
 
-    const { user, record } = props;
-    const { name, amount, paymentKeyId } = record;
+    const { user, record, required } = props;
+    const { name, amount, paymentKeyId, cardId } = record;
     const { realname, phoneNo } = user;
     const cards = await $$$(Card.getCards(user, true));
     for (let i = 0; i <= cards.length - 1; i++) {
       const currentCard = cards[i];
+      if (required && cardId && currentCard.cardId !== cardId) continue;
+
       try {
         tid = await Jtnet.invokeBilling({
           billingKey: currentCard.billingKey,
@@ -245,7 +254,7 @@ export class Record {
     user: UserModel; // 사용자
     record: RecordModel; // 시도할 결제 레코드
     paymentKey: PaymentKeyModel; // 지점이 임의로 존재하는지 확인
-    required?: boolean; // 무조건 결제가 되야 하는지 여부(미수금 O/X)
+    required: boolean; // 무조건 결제가 되야 하는지 여부(미수금 O/X)
   }): Promise<() => Prisma.Prisma__RecordModelClient<RecordModel>> {
     const retiredAt = new Date();
     const { user, record, required } = props;
@@ -255,7 +264,7 @@ export class Record {
       data: { retiredAt },
     });
 
-    const { card, tid } = await this.tryPayment({ user, record });
+    const { card, tid } = await this.tryPayment({ user, record, required });
     if (required && !card) throw RESULT.NO_AVAILABLE_CARD();
 
     const cardId = card && card.cardId;
