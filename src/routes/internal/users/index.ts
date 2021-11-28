@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import {
   Card,
+  getInternalUsersCardsRouter,
   getInternalUsersCouponsRouter,
   InternalUserMiddleware,
   RESULT,
   Wrapper,
 } from '../../..';
 
-export * from '../records';
+export * from './cards';
 export * from './coupons';
 
 export function getInternalUsersRouter(): Router {
@@ -17,6 +18,12 @@ export function getInternalUsersRouter(): Router {
     '/:userId/coupons',
     InternalUserMiddleware(),
     getInternalUsersCouponsRouter()
+  );
+
+  router.use(
+    '/:userId/cards',
+    InternalUserMiddleware(),
+    getInternalUsersCardsRouter()
   );
 
   router.get(

@@ -64,6 +64,18 @@ export function Wrapper(cb: WrapperCallback): WrapperCallback {
       let result: WrapperResult | undefined;
 
       if (err.name === 'Result') result = err;
+      if (err.name === 'InternalError') {
+        const { opcode, message, eventId, statusCode, details } = err;
+        res.status(statusCode || 500).json({
+          opcode,
+          eventId,
+          message,
+          ...details,
+        });
+
+        return;
+      }
+
       if (err.name === 'ValidationError') {
         const { details } = err;
         result = RESULT.FAILED_VALIDATE({ details: { details } });

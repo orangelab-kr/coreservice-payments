@@ -1,4 +1,9 @@
-import { CardModel, RecordModel } from '@prisma/client';
+import {
+  CardModel,
+  CouponGroupModel,
+  CouponModel,
+  RecordModel,
+} from '@prisma/client';
 import 'express';
 import { UserModel } from '../src';
 
@@ -21,6 +26,7 @@ declare global {
         record: RecordModel;
         coupon: CouponModel;
         couponGroup: CouponGroupModel;
+        card: CardModel;
       };
     }
   }
