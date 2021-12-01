@@ -363,6 +363,27 @@ export class Record {
     return record;
   }
 
+  public static async getRecordByOpenApiPaymentId(
+    paymentId: string
+  ): Promise<RecordModel | null> {
+    return prisma.recordModel.findFirst({
+      where: {
+        properties: {
+          path: '$.openapi.paymentId',
+          equals: paymentId,
+        },
+      },
+    });
+  }
+
+  public static async getRecordByOpenApiPaymentIdorThrow(
+    recordId: string
+  ): Promise<RecordModel> {
+    const record = await Record.getRecordByOpenApiPaymentId(recordId);
+    if (!record) throw RESULT.CANNOT_FIND_RECORD();
+    return record;
+  }
+
   public static async getRecordByPaymentId(
     user: UserModel,
     paymentId: string

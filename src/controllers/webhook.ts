@@ -1,11 +1,13 @@
-import { RecordModel } from '.prisma/client';
-import { Card } from '.';
+import { RecordModel } from '@prisma/client';
+import { Coupon, CouponGroup } from '.';
+import { Card } from '..';
 import {
   $$$,
   getCoreServiceClient,
   getPlatformClient,
   Record,
   RecordProperties,
+  RESULT,
   UserModel,
 } from '..';
 
@@ -166,16 +168,14 @@ export interface WebhookRefund {
 }
 
 export class Webhook {
-  public static async getFranchisePaymentKeyId(
-    franchiseId: string
-  ): Promise<string | null> {
+  public static async getFranchise(franchiseId: string): Promise<any> {
     try {
       const { franchise } = await getPlatformClient()
         .get(`franchise/platform/franchises/${franchiseId}`)
         .json();
 
       if (!franchise) return null;
-      return franchise.paymentKeyId;
+      return franchise;
     } catch (err: any) {
       return null;
     }
@@ -183,14 +183,16 @@ export class Webhook {
 
   public static async onPayment(payload: WebhookPayment): Promise<void> {
     const { data } = payload;
-    const [ride, user] = await Promise.all([
+    const [ride, payment, user] = await Promise.all([
       Record.getRideByOpenAPIRideId(data.rideId),
+      Record.getRecordByOpenApiPaymentId(data.paymentId),
       getCoreServiceClient('accounts')
         .get(`users/${data.ride.userId}`)
         .json<{ user: UserModel }>()
         .then(({ user }) => user),
     ]);
 
+    if (payment) throw RESULT.SUCCESS({ details: { alreadyPaid: true } });
     const { userId } = user;
     const { rideId, kickboardCode } = ride;
     const { franchiseId } = data;
