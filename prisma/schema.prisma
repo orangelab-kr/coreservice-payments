@@ -77,10 +77,11 @@ enum CouponGroupType {
 model CouponGroupModel {
   couponGroupId String @id @default(uuid())
 
-  code        String?
-  type        CouponGroupType @default(ONETIME)
-  name        String
-  description String
+  code         String?
+  type         CouponGroupType @default(ONETIME)
+  name         String
+  description  String
+  abbreviation String?
 
   validity Int?
   limit    Int?

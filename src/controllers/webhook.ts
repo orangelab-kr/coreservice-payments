@@ -201,9 +201,18 @@ export class Webhook {
       openapi: <any>{ ...data, ride: undefined },
     };
 
+    let abbrevation = '미';
+    if (data.ride.discountId) {
+      const { discountId } = data.ride;
+      const coupon = await Coupon.getCouponByOpenApiOrThrow(discountId);
+      abbrevation = coupon.couponGroup.abbreviation || '선';
+    }
+
+    const franchise = await Webhook.getFranchise(franchiseId);
+    const paymentKeyId = franchise ? franchise.paymentKeyId : null;
+    const name = franchise ? franchise.name : '미지정';
     const type = data.paymentType === 'SERVICE' ? '이용료' : '추가금';
-    const recordName = `${type}(${kickboardCode})`;
-    const paymentKeyId = await Webhook.getFranchisePaymentKeyId(franchiseId);
+    const recordName = `${name}(${abbrevation}) / ${type}(${kickboardCode})`;
     const record: RecordModel = await $$$(
       Record.createThenPayRecord({
         paymentKeyId,

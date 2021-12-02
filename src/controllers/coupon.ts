@@ -65,6 +65,7 @@ export class Coupon {
         type: true,
         name: true,
         description: true,
+        abbreviation: true,
         validity: true,
         limit: true,
         properties: false,
@@ -80,6 +81,28 @@ export class Coupon {
     updatedAt: true,
     deletedAt: true,
   };
+
+  public static async getCouponByOpenApi(
+    discountId: string
+  ): Promise<(CouponModel & { couponGroup: CouponGroupModel }) | null> {
+    return <any>prisma.couponModel.findFirst({
+      select: Coupon.defaultSelect,
+      where: {
+        properties: {
+          path: '$.openapi.discountId',
+          equals: discountId,
+        },
+      },
+    });
+  }
+
+  public static async getCouponByOpenApiOrThrow(
+    discountId: string
+  ): Promise<CouponModel & { couponGroup: CouponGroupModel }> {
+    const coupon = await Coupon.getCouponByOpenApi(discountId);
+    if (!coupon) throw RESULT.CANNOT_FIND_COUPON();
+    return coupon;
+  }
 
   public static async getCouponOrThrow(
     user: UserModel,
