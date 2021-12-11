@@ -85,20 +85,28 @@ export class Jtnet {
     return res.tid;
   }
 
-  public static async refundBilling(record: RecordModel): Promise<void> {
+  public static async refundBilling(
+    record: RecordModel,
+    props: { reason?: string; amount?: number }
+  ): Promise<void> {
     const client = this.getClient();
-    const { paymentKeyId, amount, tid } = record;
+    const { paymentKeyId, tid } = record;
     if (!paymentKeyId) throw RESULT.NOT_PAIED_RECORD();
     const { identity, secretKey } = await this.getPaymentKey(paymentKeyId);
+    const reason = props.reason && props.reason.substring(0, 100);
+    const isParticalCancel =
+      (props.amount && props.amount !== record.initialAmount) ||
+      record.refundedAt;
     const res = await client
       .post({
         url: 'refunds',
         form: {
           cancel_pw: '0000',
-          cancel_amt: amount,
+          cancel_amt: props.amount,
+          cancel_msg: reason,
           mid: identity,
           api_key: secretKey,
-          partial_cancel: 0,
+          partial_cancel: isParticalCancel ? 1 : 0,
           tid,
         },
       })

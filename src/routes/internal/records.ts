@@ -45,12 +45,8 @@ export function getInternalRecordsRouter(): Router {
     '/:recordId/refund',
     InternalRecordMiddleware(),
     Wrapper(async (req) => {
-      const {
-        body: { reason },
-        internal: { record: beforeRecord },
-      } = req;
-
-      const record = await $$$(Record.refundRecord(beforeRecord, reason));
+      const { body, internal } = req;
+      const record = await $$$(Record.refundRecord(internal.record, body));
       throw RESULT.SUCCESS({ details: { record } });
     })
   );

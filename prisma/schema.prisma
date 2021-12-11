@@ -50,9 +50,10 @@ model RecordModel {
   paymentKeyId String
   paymentKey   PaymentKeyModel @relation(fields: [paymentKeyId], references: [paymentKeyId])
 
-  name        String // Ex. HI030 (이용료, 패널티)
-  amount      Int
-  description String @default("")
+  name          String // Ex. HI030 (이용료, 패널티)
+  amount        Int
+  initialAmount Int
+  description   String @default("")
 
   tid String?
 

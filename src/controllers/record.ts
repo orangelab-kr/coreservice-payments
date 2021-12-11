@@ -148,6 +148,7 @@ export class Record {
     const { userId } = user;
     const { cardId, amount, name, description, properties, paymentKeyId } =
       await schema.validateAsync(props);
+    const initialAmount = amount;
 
     return () =>
       prisma.recordModel.create({
@@ -156,6 +157,7 @@ export class Record {
           cardId,
           amount,
           name,
+          initialAmount,
           paymentKeyId,
           description,
           properties,
@@ -412,16 +414,22 @@ export class Record {
 
   public static async refundRecord(
     record: RecordModel,
-    reason?: string
+    props: { reason?: string; amount?: number }
   ): Promise<() => Prisma.Prisma__RecordModelClient<RecordModel>> {
     const { recordId, refundedAt, tid } = record;
-    if (refundedAt) throw RESULT.ALREADY_REFUNDED_RECORD();
-    if (tid) await Jtnet.refundBilling(record);
+    const { reason, amount } = await Joi.object({
+      reason: Joi.string().optional(),
+      amount: Joi.number().max(record.amount).optional(),
+    }).validateAsync(props);
+    if (refundedAt && !amount) throw RESULT.ALREADY_REFUNDED_RECORD();
+    const updatedAmount = record.amount - amount;
+    if (tid) await Jtnet.refundBilling(record, props);
     return () =>
       prisma.recordModel.update({
         where: { recordId },
         data: {
           refundedAt: new Date(),
+          amount: updatedAmount,
           reason,
         },
       });
