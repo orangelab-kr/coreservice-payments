@@ -65,12 +65,21 @@ export class Record {
     paymentKeyId?: string | null; // 결제할 가맹점
     amount: number; // 결제할 금액
     name: string; // 제품명
+    displayName: string; // 표기할 제품명
     description?: string; // 설명
     required: boolean; // 필수 여부
     properties?: RecordProperties; // 기타 속성
   }): Promise<() => Prisma.Prisma__RecordModelClient<RecordModel>> {
-    const { cardId, amount, name, description, required, properties, userId } =
-      props;
+    const {
+      cardId,
+      amount,
+      displayName,
+      name,
+      description,
+      required,
+      properties,
+      userId,
+    } = props;
 
     const paymentKey = props.paymentKeyId
       ? await Jtnet.getPaymentKey(props.paymentKeyId)
@@ -87,6 +96,7 @@ export class Record {
         cardId,
         amount,
         name,
+        displayName,
         description,
         properties,
         paymentKeyId,
@@ -130,6 +140,7 @@ export class Record {
     props: {
       cardId?: string;
       amount: number;
+      displayName: string;
       name: string;
       paymentKeyId: string;
       description?: string;
@@ -139,6 +150,7 @@ export class Record {
     const schema = Joi.object({
       cardId: Joi.string().uuid().optional(),
       amount: Joi.number().required(),
+      displayName: Joi.string().required(),
       name: Joi.string().required(),
       paymentKeyId: Joi.string().uuid().required(),
       description: Joi.string().allow('').optional(),
@@ -146,8 +158,15 @@ export class Record {
     });
 
     const { userId } = user;
-    const { cardId, amount, name, description, properties, paymentKeyId } =
-      await schema.validateAsync(props);
+    const {
+      cardId,
+      amount,
+      displayName,
+      name,
+      description,
+      properties,
+      paymentKeyId,
+    } = await schema.validateAsync(props);
     const initialAmount = amount;
 
     return () =>
@@ -156,6 +175,7 @@ export class Record {
           userId,
           cardId,
           amount,
+          displayName,
           name,
           initialAmount,
           paymentKeyId,
@@ -295,27 +315,28 @@ export class Record {
     },
     user?: UserModel
   ): Promise<{ records: RecordModel[]; total: number }> {
-    const schema = Joi.object({
-      take: Joi.number().default(10).optional(),
-      skip: Joi.number().default(0).optional(),
-      search: Joi.string().allow('').default('').optional(),
-      userId: Joi.string().uuid().optional(),
-      orderByField: Joi.string()
-        .default('createdAt')
-        .valid(
-          'amount',
-          'refundedAt',
-          'processedAt',
-          'retriedAt',
-          'createdAt',
-          'updatedAt'
-        )
-        .optional(),
-      orderBySort: Joi.string().valid('asc', 'desc').default('desc').optional(),
-    });
-
     const { take, skip, search, userId, orderByField, orderBySort } =
-      await schema.validateAsync(props);
+      await Joi.object({
+        take: Joi.number().default(10).optional(),
+        skip: Joi.number().default(0).optional(),
+        search: Joi.string().allow('').default('').optional(),
+        userId: Joi.string().uuid().optional(),
+        orderByField: Joi.string()
+          .default('createdAt')
+          .valid(
+            'amount',
+            'refundedAt',
+            'processedAt',
+            'retriedAt',
+            'createdAt',
+            'updatedAt'
+          )
+          .optional(),
+        orderBySort: Joi.string()
+          .valid('asc', 'desc')
+          .default('desc')
+          .optional(),
+      }).validateAsync(props);
 
     const where: Prisma.RecordModelWhereInput = {
       OR: [
@@ -324,6 +345,7 @@ export class Record {
         { cardId: search },
         { paymentKeyId: search },
         { name: { contains: search } },
+        { displayName: { contains: search } },
         { description: { contains: search } },
         { reason: { contains: search } },
       ],
@@ -421,7 +443,7 @@ export class Record {
       reason: Joi.string().optional(),
       amount: Joi.number().max(record.amount).optional(),
     }).validateAsync(props);
-    if (refundedAt && !amount) throw RESULT.ALREADY_REFUNDED_RECORD();
+    if (refundedAt && !record.amount) throw RESULT.ALREADY_REFUNDED_RECORD();
     const updatedAmount = record.amount - amount;
     if (tid) await Jtnet.refundBilling(record, props);
     return () =>

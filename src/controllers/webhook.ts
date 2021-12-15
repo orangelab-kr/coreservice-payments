@@ -160,15 +160,17 @@ export class Webhook {
 
     const franchise = await Webhook.getFranchise(franchiseId);
     const paymentKeyId = franchise ? franchise.paymentKeyId : null;
-    const name = franchise ? franchise.name : '미지정';
+    const franchiseName = franchise ? franchise.name : '미지정';
     const type = payment.paymentType === 'SERVICE' ? '이용료' : '추가금';
-    const recordName = `${name}(${abbrevation}) / ${type}(${kickboardCode})`;
+    const name = `${franchiseName}(${abbrevation}) / ${type}(${kickboardCode})`;
+    const displayName = `${type}(${kickboardCode})`;
     const record: RecordModel = await $$$(
       Record.createThenPayRecord({
+        name,
+        displayName,
         paymentKeyId,
         userId: user.userId,
         amount: payment.amount,
-        name: recordName,
         description: payment.description,
         required: false,
         properties,
@@ -179,14 +181,14 @@ export class Webhook {
     await Record.updateRidePrice(ride).catch(() => null);
 
     try {
-      const { amount, cardId } = record;
-      if (record.processedAt && cardId) {
+      const { amount, cardId, processedAt } = record;
+      if (processedAt && cardId) {
         const { cardName } = await Card.getCardOrThrow(user, cardId);
         await getCoreServiceClient('accounts').post({
           url: `users/${userId}/notifications`,
           json: {
             type: 'info',
-            title: `🧾 ${recordName} ${amount.toLocaleString()}원 / 결제 완료`,
+            title: `🧾 ${displayName} ${amount.toLocaleString()}원 / 결제 완료`,
             description: `${cardName} 카드로 ${type} 결제를 성공하였습니다.`,
           },
         });
@@ -195,7 +197,7 @@ export class Webhook {
           url: `users/${userId}/notifications`,
           json: {
             type: 'info',
-            title: `🧾 ${recordName} ${amount.toLocaleString()}원 / 결제 실패`,
+            title: `🧾 ${displayName} ${amount.toLocaleString()}원 / 결제 실패`,
             description: `${type} 결제를 실패하였습니다. 결제 내역에서 결제를 완료해주세요.`,
           },
         });
@@ -216,21 +218,36 @@ export class Webhook {
 
     const { userId } = user;
     const { paymentId } = payment;
-    const record = await Record.getRecordByPaymentIdOrThrow(user, paymentId);
-    await $$$(Record.refundRecord(record, { amount, reason }));
-    await Record.setOpenApiProcessed(record);
+    const oldRecord = await Record.getRecordByPaymentIdOrThrow(user, paymentId);
+    const record: RecordModel = await $$$(
+      Record.refundRecord(oldRecord, { amount, reason })
+    );
+
+    await Record.setOpenApiProcessed(oldRecord);
     await Record.updateRidePrice(ride).catch(() => null);
 
     try {
-      const { name, amount } = record;
-      await getCoreServiceClient('accounts').post({
-        url: `users/${userId}/notifications`,
-        json: {
-          type: 'info',
-          title: `🧾 ${name} ${amount.toLocaleString()}원 / 결제 환불`,
-          description: `결제하신 내역이 환불 처리되었습니다.`,
-        },
-      });
+      const { displayName, amount } = record;
+      if (!amount) {
+        await getCoreServiceClient('accounts').post({
+          url: `users/${userId}/notifications`,
+          json: {
+            type: 'info',
+            title: `🧾 ${displayName} ${amount.toLocaleString()}원 / 결제 환불`,
+            description: `결제하신 내역이 환불 처리되었습니다. 영업일 기준 최대 7일까지 소요될 수 있습니다.`,
+          },
+        });
+      } else {
+        const refundedAmount = record.initialAmount - amount;
+        await getCoreServiceClient('accounts').post({
+          url: `users/${userId}/notifications`,
+          json: {
+            type: 'info',
+            title: `🧾 ${displayName} ${refundedAmount.toLocaleString()}원 / 결제 부분환불`,
+            description: `결제하신 내역이 부분환불 처리되었습니다. 영업일 기준 최대 7일까지 소요될 수 있습니다.`,
+          },
+        });
+      }
     } catch (err) {
       const errorId = Sentry.captureException(err);
       logger.error(`환불 / 안내 푸시를 발송하지 못했습니다. (${errorId})`);
