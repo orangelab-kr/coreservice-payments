@@ -1,5 +1,6 @@
 import {
   CardModel,
+  DunningModel,
   PaymentKeyModel,
   Prisma,
   PrismaPromise,
@@ -312,31 +313,37 @@ export class Record {
         | 'createdAt'
         | 'updatedAt';
       orderBySort?: 'asc' | 'desc';
+      onlyUnpaid?: boolean;
     },
     user?: UserModel
   ): Promise<{ records: RecordModel[]; total: number }> {
-    const { take, skip, search, userId, orderByField, orderBySort } =
-      await Joi.object({
-        take: Joi.number().default(10).optional(),
-        skip: Joi.number().default(0).optional(),
-        search: Joi.string().allow('').default('').optional(),
-        userId: Joi.string().uuid().optional(),
-        orderByField: Joi.string()
-          .default('createdAt')
-          .valid(
-            'amount',
-            'refundedAt',
-            'processedAt',
-            'retriedAt',
-            'createdAt',
-            'updatedAt'
-          )
-          .optional(),
-        orderBySort: Joi.string()
-          .valid('asc', 'desc')
-          .default('desc')
-          .optional(),
-      }).validateAsync(props);
+    const {
+      take,
+      skip,
+      search,
+      userId,
+      orderByField,
+      orderBySort,
+      onlyUnpaid,
+    } = await Joi.object({
+      take: Joi.number().default(10).optional(),
+      skip: Joi.number().default(0).optional(),
+      search: Joi.string().allow('').default('').optional(),
+      userId: Joi.string().uuid().optional(),
+      orderByField: Joi.string()
+        .default('createdAt')
+        .valid(
+          'amount',
+          'refundedAt',
+          'processedAt',
+          'retriedAt',
+          'createdAt',
+          'updatedAt'
+        )
+        .optional(),
+      orderBySort: Joi.string().valid('asc', 'desc').default('desc').optional(),
+      onlyUnpaid: Joi.boolean().default(false).optional(),
+    }).validateAsync(props);
 
     const where: Prisma.RecordModelWhereInput = {
       OR: [
@@ -353,6 +360,7 @@ export class Record {
 
     if (userId) where.userId = userId;
     if (user) where.userId = user.userId;
+    if (onlyUnpaid) where.processedAt = null;
     const orderBy = { [orderByField]: orderBySort };
     const [total, records] = await prisma.$transaction([
       prisma.recordModel.count({ where }),

@@ -54,7 +54,7 @@ model RecordModel {
   displayName   String
   amount        Int
   initialAmount Int
-  description   String  @default("")
+  description   String @default("")
 
   tid String?
 
@@ -66,6 +66,11 @@ model RecordModel {
 
   properties Json?
 
+  dunningCalls    DunningModel[] @relation("DunningCalls")
+  dunningMessages DunningModel[] @relation("DunningMessages")
+  dunningRetries  DunningModel[] @relation("DunningRetries")
+
+  dunnedAt  DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -107,6 +112,23 @@ model CouponModel {
 
   usedAt    DateTime?
   expiredAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+model DunningModel {
+  dunningId String @id @default(uuid())
+
+  recordCallId String?
+  recordCall   RecordModel? @relation("DunningCalls", fields: [recordCallId], references: [recordId], onDelete: Cascade)
+
+  recordMessageId String?
+  recordMessage   RecordModel? @relation("DunningMessages", fields: [recordMessageId], references: [recordId], onDelete: Cascade)
+
+  recordRetryId String?
+  recordRetry   RecordModel? @relation("DunningRetries", fields: [recordRetryId], references: [recordId], onDelete: Cascade)
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?

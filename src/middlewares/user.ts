@@ -4,12 +4,18 @@ import { getCoreServiceClient, RESULT, Wrapper, WrapperCallback } from '..';
 export interface UserModel {
   userId: string;
   realname: string;
+  profileUrl: string | null;
   phoneNo: string;
-  email?: string;
-  birthday: Dayjs;
-  usedAt: Dayjs;
-  createdAt: Dayjs;
-  updatedAt: Dayjs;
+  birthday: Date | Dayjs;
+  email: string | null;
+  licenseId: string | null;
+  levelNo: number;
+  receiveSMS: Date | Dayjs | null;
+  receivePush: Date | Dayjs | null;
+  receiveEmail: Date | Dayjs | null;
+  usedAt: Date | Dayjs;
+  createdAt: Date | Dayjs;
+  updatedAt: Date | Dayjs;
 }
 
 export function UserMiddleware(): WrapperCallback {
@@ -26,9 +32,15 @@ export function UserMiddleware(): WrapperCallback {
     req.user = {
       userId: user.userId,
       realname: user.realname,
+      profileUrl: user.profileUrl,
       phoneNo: user.phoneNo,
-      email: user.email,
       birthday: dayjs(user.birthday),
+      email: user.email,
+      licenseId: user.licenseId,
+      levelNo: user.levelNo,
+      receiveSMS: user.receiveSMS,
+      receivePush: user.receivePush,
+      receiveEmail: user.receiveEmail,
       usedAt: dayjs(user.usedAt),
       createdAt: dayjs(user.createdAt),
       updatedAt: dayjs(user.updatedAt),
