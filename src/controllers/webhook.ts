@@ -145,7 +145,7 @@ export class Webhook {
     if (beforeRecord) throw RESULT.SUCCESS({ details: { alreadyPaid: true } });
     const { userId } = user;
     const { rideId, kickboardCode } = ride;
-    const { franchiseId } = payment;
+    const { franchiseId, description, paymentType } = payment;
     const properties: RecordProperties = {
       coreservice: { rideId },
       openapi: <any>{ ...payment, ride: undefined },
@@ -161,9 +161,10 @@ export class Webhook {
     const franchise = await Webhook.getFranchise(franchiseId);
     const paymentKeyId = franchise ? franchise.paymentKeyId : null;
     const franchiseName = franchise ? franchise.name : '미지정';
-    const type = payment.paymentType === 'SERVICE' ? '이용료' : '추가금';
+    const type = paymentType === 'SERVICE' ? '이용료' : '추가금';
     const name = `${franchiseName}(${abbrevation}) / ${type}(${kickboardCode})`;
-    const displayName = `${type}(${kickboardCode})`;
+    let displayName = `${type}(${kickboardCode})`;
+    if (description) displayName += ` / ${description}`;
     const record: RecordModel = await $$$(
       Record.createThenPayRecord({
         name,
