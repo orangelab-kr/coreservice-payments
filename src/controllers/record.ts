@@ -441,11 +441,11 @@ export class Record {
     const { recordId, refundedAt, tid } = record;
     const { reason, amount } = await Joi.object({
       reason: Joi.string().optional(),
-      amount: Joi.number().max(record.amount).optional(),
+      amount: Joi.number().default(record.amount).max(record.amount).optional(),
     }).validateAsync(props);
     if (refundedAt && !record.amount) throw RESULT.ALREADY_REFUNDED_RECORD();
     const updatedAmount = record.amount - amount;
-    if (tid) await Jtnet.refundBilling(record, props);
+    if (tid) await Jtnet.refundBilling(record, { reason, amount });
     return () =>
       prisma.recordModel.update({
         where: { recordId },
