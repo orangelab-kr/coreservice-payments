@@ -94,7 +94,6 @@ export class Jtnet {
     if (!paymentKeyId) throw RESULT.NOT_PAIED_RECORD();
     const { identity, secretKey } = await this.getPaymentKey(paymentKeyId);
     const reason = props.reason && props.reason.substring(0, 100);
-    console.log(props);
     const isParticalCancel =
       (props.amount && props.amount !== record.initialAmount) ||
       record.refundedAt;
