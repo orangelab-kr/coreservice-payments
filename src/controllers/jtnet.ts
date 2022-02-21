@@ -85,28 +85,40 @@ export class Jtnet {
     return res.tid;
   }
 
-  public static async refundBilling(
-    record: RecordModel,
-    props: { reason?: string; amount?: number }
-  ): Promise<void> {
+  public static async refundBilling(props: {
+    tid: string;
+    reason?: string;
+    amount?: number;
+    paymentKeyId?: string;
+    isParticalCancel?: boolean;
+  }): Promise<void> {
+    const schema = Joi.object({
+      tid: Joi.string().required(),
+      reason: Joi.string().optional(),
+      amount: Joi.number().optional(),
+      paymentKeyId: Joi.string().uuid().optional(),
+      isParticalCancel: Joi.boolean().default(false).optional(),
+    });
+
+    const { tid, reason, amount, paymentKeyId, isParticalCancel } =
+      await schema.validateAsync(props);
+
     const client = this.getClient();
-    const { paymentKeyId, tid } = record;
-    if (!paymentKeyId) throw RESULT.NOT_PAIED_RECORD();
-    const { identity, secretKey } = await this.getPaymentKey(paymentKeyId);
-    const reason = props.reason && props.reason.substring(0, 100);
-    const isParticalCancel =
-      (props.amount && props.amount !== record.initialAmount) ||
-      record.refundedAt;
+    // Legacy 대응 -> 추후에는 무조건 PaymentKey 는 Required 임
+    const primaryPaymentKey = await this.getPrimaryPaymentKey();
+    let paymentKey = primaryPaymentKey;
+    if (paymentKeyId) paymentKey = await this.getPaymentKey(paymentKeyId);
+    const { identity, secretKey } = paymentKey;
     const res = await client
       .post({
         url: 'refunds',
         form: {
           cancel_pw: '0000',
-          cancel_amt: props.amount,
-          cancel_msg: reason,
+          cancel_amt: amount,
+          cancel_msg: reason && reason.substring(0, 100),
+          partial_cancel: isParticalCancel ? 1 : 0,
           mid: identity,
           api_key: secretKey,
-          partial_cancel: isParticalCancel ? 1 : 0,
           tid,
         },
       })
@@ -115,6 +127,27 @@ export class Jtnet {
     if (!['2001', '2013'].includes(res.result_cd)) {
       throw RESULT.CANNOT_REFUND_RECORD({ args: [res.result_msg] });
     }
+  }
+
+  public static async refundBillingByRecord(
+    record: RecordModel,
+    props: { reason?: string; amount?: number }
+  ): Promise<void> {
+    const { paymentKeyId, tid } = record;
+    const amount = props.amount || record.amount;
+    if (!tid || !paymentKeyId) throw RESULT.NOT_PAIED_RECORD();
+    const reason = props.reason && props.reason.substring(0, 100);
+    const isParticalCancel =
+      (props.amount && props.amount !== record.initialAmount) ||
+      !!record.refundedAt;
+
+    return this.refundBilling({
+      tid,
+      reason,
+      amount,
+      paymentKeyId,
+      isParticalCancel,
+    });
   }
 
   public static async revokeBilling(billingKey: string): Promise<void> {

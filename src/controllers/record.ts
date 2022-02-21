@@ -453,7 +453,7 @@ export class Record {
     }).validateAsync(props);
     if (refundedAt && !record.amount) throw RESULT.ALREADY_REFUNDED_RECORD();
     const updatedAmount = record.amount - amount;
-    if (tid) await Jtnet.refundBilling(record, { reason, amount });
+    if (tid) await Jtnet.refundBillingByRecord(record, { reason, amount });
     return () =>
       prisma.recordModel.update({
         where: { recordId },

@@ -20,5 +20,13 @@ export function getDirectRouter(): Router {
     })
   );
 
+  router.post(
+    '/cancel',
+    Wrapper(async (req) => {
+      await Jtnet.refundBilling(req.body);
+      throw RESULT.SUCCESS();
+    })
+  );
+
   return router;
 }
