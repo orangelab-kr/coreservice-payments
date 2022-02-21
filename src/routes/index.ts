@@ -5,7 +5,6 @@ import {
   getCardsRouter,
   getCouponsRouter,
   getInternalRouter,
-  getLegacyRouter,
   getRecordsRouter,
   getWebhookRouter,
   InternalMiddleware,
@@ -13,18 +12,19 @@ import {
   UserMiddleware,
   Wrapper,
 } from '..';
+import { getDirectRouter } from './direct';
 
 export * from './cards';
 export * from './coupons';
+export * from './direct';
 export * from './internal';
-export * from './legacy';
 export * from './records';
 export * from './webhook';
 
 export function getRouter(): Router {
   const router = Router();
 
-  router.use('/legacy', getLegacyRouter());
+  router.use(['/direct', '/legacy'], getDirectRouter());
   router.use('/cards', UserMiddleware(), getCardsRouter());
   router.use('/records', UserMiddleware(), getRecordsRouter());
   router.use('/coupons', UserMiddleware(), getCouponsRouter());

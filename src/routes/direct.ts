@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { Jtnet, RESULT, Wrapper } from '..';
 
-export function getLegacyRouter(): Router {
+export function getDirectRouter(): Router {
   const router = Router();
 
   router.post(
