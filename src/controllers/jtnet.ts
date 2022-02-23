@@ -115,7 +115,7 @@ export class Jtnet {
         form: {
           cancel_pw: '0000',
           cancel_amt: amount,
-          cancel_msg: reason && reason.substring(0, 100),
+          cancel_msg: reason ? reason.substring(0, 100) : '사유 없음',
           partial_cancel: isParticalCancel ? 1 : 0,
           mid: identity,
           api_key: secretKey,
