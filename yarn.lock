@@ -2692,7 +2692,7 @@ fs-constants@^1.0.0:
   resolved "https://registry.yarnpkg.com/fs-constants/-/fs-constants-1.0.0.tgz#6be0de9be998ce16af8afc24497b9ee9b7ccd9ad"
   integrity sha512-y6OAwoSIf7FyjMIv94u+b5rdheZEjzR63GTyZJm5qh4Bi+2YgwLCcI/fPFZkL5PSixOt6ZNKm+w+Hfp/Bciwow==
 
-fs-extra@^10.0.0:
+fs-extra@^10.0.1:
   version "10.0.1"
   resolved "https://registry.yarnpkg.com/fs-extra/-/fs-extra-10.0.1.tgz#27de43b4320e833f6867cc044bfce29fdf0ef3b8"
   integrity sha512-NbdoVMZso2Lsrn/QwLXOy6rm0ufY2zEOKCDzJR/0kBsb0E6qed0P3iYK+Ath3BfvXEeu4JhEtXLgILx5psUfag==
@@ -4751,10 +4751,10 @@ serve-static@1.14.2:
     parseurl "~1.3.3"
     send "0.17.2"
 
-serverless-doppler@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/serverless-doppler/-/serverless-doppler-1.0.1.tgz#38fc36a374ce6883912eca4f31a85d245d83222c"
-  integrity sha512-s6KykL73YrT33ZFs81+beMJ4nln4qK039r5OOvq4EdvhQCcD7qR6ANap14PB8rq6RxHwToaP1Yd3arW9+be0Bw==
+serverless-doppler@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/serverless-doppler/-/serverless-doppler-1.0.2.tgz#ae964cefa0ebbe10c7817cf78e4594175d0ec12c"
+  integrity sha512-WO7pT4p7C3q4SBD5DJVuQIo9aLdEEc/otFoa3Lk0TkJYirif2nXWvE+1yb18ybB2VbXP02G2C1q5SEzB32n1aQ==
   dependencies:
     axios "^0.26.1"
     lodash "^4.17.21"
@@ -4801,13 +4801,14 @@ serverless-offline@^8.5.0:
     velocityjs "^2.0.6"
     ws "^7.5.7"
 
-serverless-webpack-prisma@^1.0.10:
-  version "1.0.10"
-  resolved "https://registry.yarnpkg.com/serverless-webpack-prisma/-/serverless-webpack-prisma-1.0.10.tgz#7803d7a930fe9aefaf0b8e7c7088d0b99b59472e"
-  integrity sha512-Hezbnv3ySsMasm+T0jejx+C2zJLXo39+u9Mwgh0YR6rO/GnAAIrDJn+ptqKp+aLvorc0pzaSm6MpaEJ2vMKdGQ==
+serverless-webpack-prisma@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/serverless-webpack-prisma/-/serverless-webpack-prisma-1.1.0.tgz#81eac68e05ef7397ec2488134d32b38bbc3b3016"
+  integrity sha512-0uBPplY2SUDulq9PkeZEJ0ny1y6+to5ej1Yan8dD8TGH38mMw1JiRLNbOn7wos94hdcBJEd3yBnySCq8N7iBPw==
   dependencies:
     fast-glob "^3.2.11"
-    fs-extra "^10.0.0"
+    fs-extra "^10.0.1"
+    lodash "^4.17.21"
 
 serverless-webpack@^5.6.1:
   version "5.6.1"

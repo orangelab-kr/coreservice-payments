@@ -15,9 +15,9 @@ package:
 
 plugins:
   - serverless-webpack
+  - serverless-webpack-prisma
   - serverless-doppler
   - serverless-offline
-  - serverless-webpack-prisma
 
 custom:
   webpack:
@@ -30,5 +30,6 @@ functions:
   app:
     handler: src/index.handler
     events:
-      - http: 'ANY /'
-      - http: 'ANY /{proxy+}'
+      - http:
+          method: ANY
+          path: '{proxy+}'
