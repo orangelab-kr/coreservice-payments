@@ -1,4 +1,3 @@
-import { Request } from 'express';
 import got, {
   BeforeErrorHook,
   BeforeRequestHook,
