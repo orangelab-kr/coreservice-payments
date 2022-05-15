@@ -60,6 +60,9 @@ export class Jtnet {
 
     let paymentKey = primaryPaymentKey;
     if (paymentKeyId) paymentKey = await this.getPaymentKey(paymentKeyId);
+    if (billingKey === process.env.HIKICK_BYPASS_BILLING_KEY) {
+      return `bypass_${Date.now()}`;
+    }
 
     const res = await client
       .post({
@@ -108,6 +111,7 @@ export class Jtnet {
     const primaryPaymentKey = await this.getPrimaryPaymentKey();
     let paymentKey = primaryPaymentKey;
     if (paymentKeyId) paymentKey = await this.getPaymentKey(paymentKeyId);
+    if (tid.startsWith('bypass_')) return;
     const { identity, secretKey } = paymentKey;
     const res = await client
       .post({
@@ -169,6 +173,20 @@ export class Jtnet {
     }
   }
 
+  public static isBypassCard(props: {
+    cardNumber: string;
+    expiry: string;
+    password: string;
+    birthday: string;
+  }): boolean {
+    const { cardNumber, expiry, password, birthday } = props;
+    if (process.env.HIKICK_BYPASS_CARD_NUMBER !== cardNumber) return false;
+    if (process.env.HIKICK_BYPASS_EXPIRY !== expiry) return false;
+    if (process.env.HIKICK_BYPASS_PASSWORD !== password) return false;
+    if (process.env.HIKICK_BYPASS_BIRTHDAY !== birthday) return false;
+    return true;
+  }
+
   public static async createBillingKey(props: {
     cardNumber: string;
     expiry: string;
@@ -184,6 +202,12 @@ export class Jtnet {
 
     const client = this.getClient();
     const data = await schema.validateAsync(props);
+    if (this.isBypassCard(props)) {
+      const cardName = '하이킥 바이패스';
+      const billingKey = process.env.HIKICK_BYPASS_BILLING_KEY || 'bypass';
+      return { billingKey, cardName };
+    }
+
     const { cardNumber, password, birthday } = data;
     const paymentKey = await this.getPrimaryPaymentKey();
     const expiry = data.expiry && dayjs(data.expiry).format('YYMM');
