@@ -157,6 +157,7 @@ export class Jtnet {
   public static async revokeBilling(billingKey: string): Promise<void> {
     const client = this.getClient();
     const paymentKey = await this.getPrimaryPaymentKey();
+    if (billingKey === process.env.HIKICK_BYPASS_BILLING_KEY) return;
     const res = await client
       .post({
         url: 'del_billkey',
@@ -194,7 +195,7 @@ export class Jtnet {
     birthday: string;
   }): Promise<{ billingKey: string; cardName: string }> {
     const schema = Joi.object({
-      cardNumber: Joi.string().length(16).required(),
+      cardNumber: Joi.string().min(13).max(19).required(),
       expiry: Joi.string().required(),
       password: Joi.string().length(2).required(),
       birthday: Joi.string().required(),
