@@ -29,24 +29,46 @@ async function processRecord(record: RecordModel): Promise<void> {
   const { userId } = record;
   const user = await getUserByRecord(record);
   if (!user) {
-    logger.debug(`미수금 / 사용자(${userId}) 정보를 불러오지 못해 무시합니다.`);
+    logger.info(`미수금 / 사용자(${userId}) 정보를 불러오지 못해 무시합니다.`);
     return;
   }
 
-  const { realname } = user;
-  const { recordId, name } = record;
+  const { realname, phoneNo } = user;
+  const { recordId, name, amount } = record;
   try {
     const hasRetrySuccessfully = await retryRecord({ record, user });
     if (hasRetrySuccessfully) {
-      logger.debug(
+      logger.info(
         `미수금 / ${realname}(${userId})님의 ${name}(${recordId})(을)를 결제하였기 때문에 별도의 조치를 취하지 않습니다.`
       );
 
       return;
     }
 
-    // todo: 미수금 메세지 전송(날짜별)
-    console.log(await Dunning.getDunningCount(record, 'message'));
+    const messageCount = await await Dunning.getDunningCount(record, 'message');
+    if (messageCount > 0) {
+      logger.info(
+        `미수금 / ${realname}(${userId})님의 ${name}(${recordId})(은)는 문자 시도 횟수를 초과하여 별도로 메세지를 보내지 않습니다.`
+      );
+
+      return;
+    }
+
+    await sendMessageWithMessageGateway({
+      phone: phoneNo,
+      name: 'unpaid_action',
+      fields: {
+        user,
+        link: 'https://i.hikick.kr/faq/unpaid',
+        record: {
+          ...record,
+          amount: `${amount.toLocaleString()}원`,
+          processedAt: dayjs().format('M월 D일 h시 m분'),
+        },
+      },
+    });
+
+    await Dunning.addDunning(record, 'message');
   } catch (err: any) {
     const eventId = Sentry.captureException(err);
     logger.error(
@@ -98,7 +120,7 @@ async function retryRecord(props: {
 async function getUserByRecord(record: RecordModel): Promise<UserModel | null> {
   const { userId } = record;
   if (lookupFailedUsers.includes(userId)) {
-    logger.debug(`미수금 / 사용자(${userId})는 조회 불가능한 사용자입니다.`);
+    logger.info(`미수금 / 사용자(${userId})는 조회 불가능한 사용자입니다.`);
     return null;
   }
 
