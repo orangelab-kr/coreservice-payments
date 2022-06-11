@@ -1,7 +1,10 @@
-import { RecordModel } from '@prisma/client';
+import { CardModel, RecordModel } from '@prisma/client';
 import * as Sentry from '@sentry/node';
+import dayjs from 'dayjs';
 import { $$$, getCoreServiceClient, logger, Record, UserModel } from '..';
+import { Card } from '../controllers';
 import { Dunning } from '../controllers/dunning';
+import { sendMessageWithMessageGateway } from '../tools/messageGateway';
 
 const cachedUsers: { [key: string]: UserModel } = {};
 const lookupFailedUsers: string[] = [];
@@ -11,9 +14,11 @@ export const onUnpaidScheduler = async (): Promise<void> => {
   let total;
   let skip = 0;
 
+  logger.info('미수금 / 미결제 사용자를 불러옵니다.');
   while (!total || total > skip) {
     Object.keys(cachedUsers).forEach((userId) => delete cachedUsers[userId]);
     const res = await Record.getRecords({ take, skip, onlyUnpaid: true });
+    if (res.records.length <= 0) break;
     await Promise.all(res.records.map((record) => processRecord(record)));
     total = res.total;
     skip += take;
@@ -29,7 +34,7 @@ async function processRecord(record: RecordModel): Promise<void> {
   }
 
   const { realname } = user;
-  const { recordId, name, createdAt } = record;
+  const { recordId, name } = record;
   try {
     const hasRetrySuccessfully = await retryRecord({ record, user });
     if (hasRetrySuccessfully) {
@@ -41,10 +46,11 @@ async function processRecord(record: RecordModel): Promise<void> {
     }
 
     // todo: 미수금 메세지 전송(날짜별)
+    console.log(await Dunning.getDunningCount(record, 'message'));
   } catch (err: any) {
     const eventId = Sentry.captureException(err);
     logger.error(
-      `미수금 / ${realname}(${userId})님에게 리워드 쿠폰을 제공할 수 없습니다. (${eventId})`
+      `미수금 / ${realname}(${userId})님에게 미수금을 걷을 수 없습니다. (${eventId})`
     );
   }
 }
@@ -53,25 +59,39 @@ async function retryRecord(props: {
   record: RecordModel;
   user: UserModel;
 }): Promise<boolean> {
-  const { record, user } = props;
-  const { userId, realname } = user;
-  const { recordId, name } = record;
+  let { record, user } = props;
+  const { userId, realname, phoneNo } = user;
   await Dunning.addDunning(record, 'retry');
 
   try {
-    await $$$(Record.retryPayment(user, record));
+    record = await $$$(Record.retryPayment(user, record));
     logger.info(
-      `미수금 / ${realname}(${userId})님의 ${name}(${recordId})(을)를 결제하였습니다.`
+      `미수금 / ${realname}(${userId})님의 ${record.name}(${record.recordId})(을)를 결제하였습니다.`
     );
   } catch (err: any) {
     logger.error(
-      `미수금 / ${realname}(${userId})님의 ${name}(${recordId})(을)를 결제할 수 없습니다.`
+      `미수금 / ${realname}(${userId})님의 ${record.name}(${record.recordId})(을)를 결제할 수 없습니다.`
     );
 
     return false;
   }
 
-  // todo: 미수금 완료 안내
+  const { cardId, amount, processedAt } = record;
+  const card: CardModel = await $$$(Card.getCard(user, <string>cardId));
+  await sendMessageWithMessageGateway({
+    phone: phoneNo,
+    name: 'unpaid_completed',
+    fields: {
+      user,
+      card,
+      record: {
+        ...record,
+        amount: `${amount.toLocaleString()}원`,
+        processedAt: dayjs(processedAt).format('M월 D일 h시 m분'),
+      },
+    },
+  });
+
   return true;
 }
 

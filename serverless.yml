@@ -33,3 +33,9 @@ functions:
       - http:
           method: ANY
           path: '{proxy+}'
+  unpaidScheduler:
+    handler: src/schedulers/unpaid.onUnpaidScheduler
+    events:
+      - schedule:
+          enabled: true
+          rate: cron(0 6 ? * 2-6 *)
