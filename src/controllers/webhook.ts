@@ -1,16 +1,18 @@
 import { RecordModel } from '@prisma/client';
-import { Coupon, CouponGroup } from '.';
 import * as Sentry from '@sentry/node';
-import { Card, logger } from '..';
+import { Coupon } from '.';
 import {
   $$$,
+  Card,
   getCoreServiceClient,
   getPlatformClient,
+  logger,
   Record,
   RecordProperties,
   RESULT,
   UserModel,
 } from '..';
+import { Centercoin } from './centercoin';
 
 interface Payment {
   paymentId: string;
@@ -180,6 +182,7 @@ export class Webhook {
 
     await Record.setOpenApiProcessed(record);
     await Record.updateRidePrice(ride).catch(() => null);
+    await Centercoin.giveReward(record);
 
     try {
       const { amount, cardId, processedAt } = record;
@@ -226,15 +229,16 @@ export class Webhook {
 
     await Record.setOpenApiProcessed(oldRecord);
     await Record.updateRidePrice(ride).catch(() => null);
+    await Centercoin.takeReward(record);
 
     try {
-      const { displayName, amount } = record;
+      const { displayName, amount, initialAmount } = record;
       if (!amount) {
         await getCoreServiceClient('accounts').post({
           url: `users/${userId}/notifications`,
           json: {
             type: 'info',
-            title: `🧾 ${displayName} ${amount.toLocaleString()}원 / 결제 환불`,
+            title: `🧾 ${displayName} ${initialAmount.toLocaleString()}원 / 결제 환불`,
             description: `결제하신 내역이 환불 처리되었습니다. 영업일 기준 최대 7일까지 소요될 수 있습니다.`,
           },
         });
