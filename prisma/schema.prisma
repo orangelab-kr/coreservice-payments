@@ -4,9 +4,8 @@ datasource db {
 }
 
 generator client {
-  provider        = "prisma-client-js"
-  binaryTargets   = ["native", "rhel-openssl-1.0.x"]
-  previewFeatures = ["filterJson"]
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
 }
 
 model PaymentKeyModel {
@@ -19,9 +18,8 @@ model PaymentKeyModel {
 
   records RecordModel[]
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model CardModel {
@@ -34,9 +32,8 @@ model CardModel {
 
   records RecordModel[]
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model RecordModel {
@@ -73,7 +70,6 @@ model RecordModel {
   dunnedAt  DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
 }
 
 enum CouponGroupType {
@@ -96,9 +92,8 @@ model CouponGroupModel {
   coupons    CouponModel[]
   properties Json?
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model CouponModel {
@@ -114,7 +109,6 @@ model CouponModel {
   expiredAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
 }
 
 model DunningModel {
@@ -129,7 +123,6 @@ model DunningModel {
   recordRetryId String?
   recordRetry   RecordModel? @relation("DunningRetries", fields: [recordRetryId], references: [recordId], onDelete: Cascade)
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

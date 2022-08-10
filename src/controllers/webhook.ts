@@ -26,7 +26,6 @@ interface Payment {
   processedAt: null;
   createdAt: Date;
   updatedAt: Date;
-  deletedAt: null;
   ride: {
     rideId: string;
     kickboardCode: string;
@@ -52,14 +51,12 @@ interface Payment {
     price: number;
     createdAt: Date;
     updatedAt: Date;
-    deletedAt: null;
     startedPhoneLocation: {
       locationId: string;
       latitude: number;
       longitude: number;
       createdAt: Date;
       updatedAt: Date;
-      deletedAt: null;
     };
     startedKickboardLocation: {
       locationId: string;
@@ -67,7 +64,6 @@ interface Payment {
       longitude: number;
       createdAt: Date;
       updatedAt: Date;
-      deletedAt: null;
     };
     terminatedPhoneLocation: null;
     terminatedKickboardLocation: null;
@@ -84,7 +80,6 @@ export interface WebhookPayment {
   completedAt: null;
   createdAt: Date;
   updatedAt: Date;
-  deletedAt: null;
   webhook: {
     webhookId: string;
     type: string;
@@ -92,7 +87,6 @@ export interface WebhookPayment {
     url: string;
     createdAt: Date;
     updatedAt: Date;
-    deletedAt: null;
   };
 }
 
@@ -107,7 +101,6 @@ export interface WebhookRefund {
   completedAt: null;
   createdAt: Date;
   updatedAt: Date;
-  deletedAt: null;
   webhook: {
     webhookId: string;
     type: string;
@@ -115,7 +108,6 @@ export interface WebhookRefund {
     url: string;
     createdAt: Date;
     updatedAt: Date;
-    deletedAt: null;
   };
 }
 

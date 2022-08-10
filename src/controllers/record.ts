@@ -33,7 +33,6 @@ export interface RideModel {
   endedAt: Date;
   createdAt: Date;
   updatedAt: Date;
-  deletedAt: null;
 }
 
 export interface RecordProperties {
@@ -49,7 +48,6 @@ export interface RecordProperties {
     processedAt: null;
     createdAt: Date;
     updatedAt: Date;
-    deletedAt: null;
   };
   coreservice?: {
     rideId?: string;

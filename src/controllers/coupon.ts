@@ -23,7 +23,6 @@ export interface OpenApiDiscount {
   usedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
-  deletedAt: null;
   discountGroup: {
     discountGroupId: string;
     enabled: boolean;
@@ -40,7 +39,6 @@ export interface OpenApiDiscount {
     validity?: number;
     createdAt: Date;
     updatedAt: Date;
-    deletedAt: null;
   };
 }
 
@@ -71,7 +69,6 @@ export class Coupon {
         properties: false,
         createdAt: true,
         updatedAt: true,
-        deletedAt: true,
       },
     },
     properties: false,
@@ -79,7 +76,6 @@ export class Coupon {
     expiredAt: true,
     createdAt: true,
     updatedAt: true,
-    deletedAt: true,
   };
 
   public static async getCouponByOpenApi(
