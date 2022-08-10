@@ -38,6 +38,14 @@ export function getInternalUsersCardsRouter(): Router {
     })
   );
 
+  router.post(
+    '/migrate',
+    Wrapper(async (req) => {
+      await Card.registerLegacyCard(req.internal.user, req.body);
+      throw RESULT.SUCCESS();
+    })
+  );
+
   router.delete(
     '/:cardId',
     InternalCardMiddleware(),

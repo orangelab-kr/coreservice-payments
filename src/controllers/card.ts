@@ -2,6 +2,26 @@ import { CardModel, Prisma, PrismaPromise } from '@prisma/client';
 import { $$$, Joi, Jtnet, prisma, Record, RESULT, UserModel } from '..';
 
 export class Card {
+  public static async registerLegacyCard(
+    user: UserModel,
+    props: { billingKeys: string[] }
+  ): Promise<void> {
+    const { billingKeys } = await Joi.object({
+      billingKeys: Joi.array().items(Joi.string()),
+    }).validateAsync(props);
+
+    await prisma.cardModel.createMany({
+      data: billingKeys.map((billingKey: string, orderBy: number) => ({
+        userId: user.userId,
+        cardName: `기존에 등록한 ${orderBy + 1}번째 카드`,
+        billingKey,
+        orderBy,
+      })),
+    });
+
+    await Card.reindexCard(user);
+  }
+
   public static async checkReady(user: UserModel): Promise<void> {
     const [cards, records] = await $$$([
       Card.getCards(user),
@@ -29,7 +49,6 @@ export class Card {
           billingKey: showBillingKey,
           createdAt: true,
           updatedAt: true,
-          deletedAt: true,
         },
       });
   }
@@ -51,7 +70,6 @@ export class Card {
           billingKey: showBillingKey,
           createdAt: true,
           updatedAt: true,
-          deletedAt: true,
         },
       });
   }
@@ -121,7 +139,6 @@ export class Card {
           billingKey: false,
           createdAt: true,
           updatedAt: true,
-          deletedAt: true,
         },
       });
   }
