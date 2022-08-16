@@ -1,6 +1,5 @@
 import {
   CardModel,
-  DunningModel,
   PaymentKeyModel,
   Prisma,
   PrismaPromise,
@@ -358,7 +357,11 @@ export class Record {
 
     if (userId) where.userId = userId;
     if (user) where.userId = user.userId;
-    if (onlyUnpaid) where.processedAt = null;
+    if (onlyUnpaid) {
+      where.refundedAt = null;
+      where.processedAt = null;
+    }
+
     const orderBy = { [orderByField]: orderBySort };
     const [total, records] = await prisma.$transaction([
       prisma.recordModel.count({ where }),
