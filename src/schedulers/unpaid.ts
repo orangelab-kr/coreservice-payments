@@ -45,7 +45,7 @@ async function processRecord(record: RecordModel): Promise<void> {
       return;
     }
 
-    const messageCount = await await Dunning.getDunningCount(record, 'message');
+    const messageCount = await Dunning.getDunningCount(record, 'message');
     if (messageCount > 0) {
       logger.info(
         `미수금 / ${realname}(${userId})님의 ${name}(${recordId})(은)는 문자 시도 횟수를 초과하여 별도로 메세지를 보내지 않습니다.`
