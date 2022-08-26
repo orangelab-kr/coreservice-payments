@@ -12,7 +12,6 @@ import {
   RESULT,
   UserModel,
 } from '..';
-import { Centercoin } from './centercoin';
 
 interface Payment {
   paymentId: string;
@@ -116,7 +115,7 @@ export class Webhook {
     try {
       const { franchise } = await getPlatformClient()
         .get(`franchise/platform/franchises/${franchiseId}`)
-        .json();
+        .json<{ opcode: number; franchise: any }>();
 
       if (!franchise) return null;
       return franchise;

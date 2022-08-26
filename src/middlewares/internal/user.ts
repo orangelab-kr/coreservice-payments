@@ -1,5 +1,10 @@
 import dayjs from 'dayjs';
-import { getCoreServiceClient, Wrapper, WrapperCallback } from '../..';
+import {
+  getCoreServiceClient,
+  UserModel,
+  Wrapper,
+  WrapperCallback,
+} from '../..';
 
 export function InternalUserMiddleware(): WrapperCallback {
   return Wrapper(async (req, res, next) => {
@@ -7,7 +12,7 @@ export function InternalUserMiddleware(): WrapperCallback {
     if (typeof userId !== 'string') throw new Error();
     const { user } = await getCoreServiceClient('accounts')
       .get(`users/${userId}`)
-      .json();
+      .json<{ opcode: number; user: UserModel }>();
 
     req.internal.user = {
       userId: user.userId,

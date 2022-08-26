@@ -128,7 +128,7 @@ async function getUserByRecord(record: RecordModel): Promise<UserModel | null> {
     if (cachedUsers[userId]) return cachedUsers[userId];
     const { user } = await getCoreServiceClient('accounts')
       .get(`users/${userId}`)
-      .json();
+      .json<{ opcode: number; user: UserModel }>();
 
     cachedUsers[userId] = user;
     return user;
