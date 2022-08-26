@@ -172,10 +172,7 @@ export class Webhook {
       })
     );
 
-    await Record.setOpenApiProcessed(record);
     await Record.updateRidePrice(ride).catch(() => null);
-    await Centercoin.giveReward(record);
-
     try {
       const { amount, cardId, processedAt } = record;
       if (processedAt && cardId) {
@@ -215,13 +212,8 @@ export class Webhook {
     const { userId } = user;
     const { paymentId } = payment;
     const oldRecord = await Record.getRecordByPaymentIdOrThrow(user, paymentId);
-    const record: RecordModel = await $$$(
-      Record.refundRecord(oldRecord, { amount, reason })
-    );
-
-    await Record.setOpenApiProcessed(oldRecord);
+    const record = await Record.refundRecord(oldRecord, { amount, reason });
     await Record.updateRidePrice(ride).catch(() => null);
-    await Centercoin.takeReward(record);
 
     try {
       const { displayName, amount, initialAmount } = record;

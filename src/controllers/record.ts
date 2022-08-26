@@ -16,6 +16,7 @@ import {
   RESULT,
   UserModel,
 } from '..';
+import { Centercoin } from './centercoin';
 
 export interface RideModel {
   rideId: string;
@@ -226,7 +227,6 @@ export class Record {
 
     const { cardId } = card;
     const processedAt = new Date();
-    await this.setOpenApiProcessed(record);
     return () =>
       prisma.recordModel.update({
         where: { recordId },
@@ -264,6 +264,11 @@ export class Record {
         card = currentCard;
         break;
       } catch (err: any) {}
+    }
+
+    if (card) {
+      await Record.setOpenApiProcessed(record);
+      await Centercoin.giveReward(record);
     }
 
     return { card, tid };
@@ -446,7 +451,7 @@ export class Record {
   public static async refundRecord(
     record: RecordModel,
     props: { reason?: string; amount?: number }
-  ): Promise<() => Prisma.Prisma__RecordModelClient<RecordModel>> {
+  ): Promise<RecordModel> {
     const { recordId, refundedAt, tid } = record;
     const { reason, amount } = await Joi.object({
       reason: Joi.string().optional(),
@@ -455,15 +460,18 @@ export class Record {
     if (refundedAt && !record.amount) throw RESULT.ALREADY_REFUNDED_RECORD();
     const updatedAmount = record.amount - amount;
     if (tid) await Jtnet.refundBillingByRecord(record, { reason, amount });
-    return () =>
-      prisma.recordModel.update({
-        where: { recordId },
-        data: {
-          refundedAt: new Date(),
-          amount: updatedAmount,
-          reason,
-        },
-      });
+    const updatedRecord = await prisma.recordModel.update({
+      where: { recordId },
+      data: {
+        refundedAt: new Date(),
+        amount: updatedAmount,
+        reason,
+      },
+    });
+
+    await Record.setOpenApiProcessed(record);
+    await Centercoin.takeReward(updatedRecord);
+    return updatedRecord;
   }
 
   public static async updateRidePrice(ride: RideModel): Promise<void> {

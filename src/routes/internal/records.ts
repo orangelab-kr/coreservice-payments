@@ -46,7 +46,7 @@ export function getInternalRecordsRouter(): Router {
     InternalRecordMiddleware(),
     Wrapper(async (req) => {
       const { body, internal } = req;
-      const record = await $$$(Record.refundRecord(internal.record, body));
+      const record = await Record.refundRecord(internal.record, body);
       throw RESULT.SUCCESS({ details: { record } });
     })
   );
