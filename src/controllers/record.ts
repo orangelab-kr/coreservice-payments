@@ -16,6 +16,7 @@ import {
   RESULT,
   UserModel,
 } from '..';
+import { reportMonitoringMetrics } from '../tools/monitoring';
 import { Centercoin } from './centercoin';
 
 export interface RideModel {
@@ -271,6 +272,8 @@ export class Record {
       await Centercoin.giveReward(record);
     }
 
+    const monitorId = card ? 'paymentSuccess' : 'paymentFailed';
+    await reportMonitoringMetrics(monitorId, { record, user });
     return { card, tid };
   }
 
@@ -459,6 +462,10 @@ export class Record {
     }).validateAsync(props);
     if (refundedAt && !record.amount) throw RESULT.ALREADY_REFUNDED_RECORD();
     const updatedAmount = record.amount - amount;
+    const { user } = await getCoreServiceClient('accounts')
+      .get(`users/${record.userId}`)
+      .json<{ opcode: number; user: UserModel }>();
+
     if (tid) await Jtnet.refundBillingByRecord(record, { reason, amount });
     const updatedRecord = await prisma.recordModel.update({
       where: { recordId },
@@ -471,6 +478,7 @@ export class Record {
 
     await Record.setOpenApiProcessed(record);
     await Centercoin.takeReward(updatedRecord);
+    await reportMonitoringMetrics('paymentRefund', { record, user });
     return updatedRecord;
   }
 

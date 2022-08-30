@@ -34,6 +34,7 @@ functions:
           path: '{proxy+}'
   unpaidScheduler:
     handler: src/schedulers/unpaid.onUnpaidScheduler
+    timeout: 900
     events:
       - schedule:
           enabled: true
