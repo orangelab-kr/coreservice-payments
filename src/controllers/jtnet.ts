@@ -1,7 +1,7 @@
 import { PaymentKeyModel, RecordModel } from '@prisma/client';
 import dayjs from 'dayjs';
 import got, { Got } from 'got';
-import { Joi, prisma, RESULT } from '..';
+import { Joi, logger, prisma, RESULT } from '..';
 
 export class Jtnet {
   private static client?: Got;
@@ -84,6 +84,10 @@ export class Jtnet {
     if (res.result_cd !== '0000') {
       throw RESULT.FAILED_PAYMENT({ args: [res.result_msg] });
     }
+
+    logger.info(
+      `JTNET / ${billingKey}로 ${amount.toLocaleString()}원 결제를 성공하였습니다. (${realname}, ${phone})`
+    );
 
     return res.tid;
   }

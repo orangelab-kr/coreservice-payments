@@ -1,5 +1,5 @@
 import { DunningModel, Prisma, RecordModel } from '@prisma/client';
-import { prisma } from '..';
+import { logger, prisma } from '..';
 
 export class Dunning {
   public static async addDunning(
@@ -18,6 +18,10 @@ export class Dunning {
         data: { dunnedAt: new Date() },
       }),
     ]);
+
+    logger.info(
+      `재촉 메세지 / ${record.displayName}(${record.recordId}) 결제건을 ${type} 재촉하였습니다.`
+    );
 
     return dunning;
   }
