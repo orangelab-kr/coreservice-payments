@@ -1,5 +1,5 @@
 import { CardModel, Prisma, PrismaPromise } from '@prisma/client';
-import { $$$, Joi, Jtnet, prisma, Record, RESULT, UserModel } from '..';
+import { $$$, Joi, Jtnet, logger, prisma, Record, RESULT, UserModel } from '..';
 
 export class Card {
   public static async registerLegacyCard(
@@ -10,7 +10,7 @@ export class Card {
       billingKeys: Joi.array().items(Joi.string()),
     }).validateAsync(props);
 
-    await prisma.cardModel.createMany({
+    const { count } = await prisma.cardModel.createMany({
       data: billingKeys.map((billingKey: string, orderBy: number) => ({
         userId: user.userId,
         cardName: `기존에 등록한 ${orderBy + 1}번째 카드`,
@@ -20,6 +20,9 @@ export class Card {
     });
 
     await Card.reindexCard(user);
+    logger.info(
+      `레거시 카드 / ${user.realname}(${user.userId})님이 ${count}개의 레거시 카드를 등록하였습니다.`
+    );
   }
 
   public static async checkReady(user: UserModel): Promise<void> {
@@ -103,6 +106,9 @@ export class Card {
     await prisma.cardModel.deleteMany({ where: { userId, cardId } });
     await Jtnet.revokeBilling(billingKey);
     await this.reindexCard(user);
+    logger.info(
+      `카드 / ${user.realname}(${user.userId})님이 ${card.cardName}(${card.cardId}) 카드를 삭제하였습니다.`
+    );
   }
 
   public static async getCardOrThrow(
@@ -123,24 +129,29 @@ export class Card {
       password: string;
       birthday: string;
     }
-  ): Promise<() => Prisma.Prisma__CardModelClient<CardModel>> {
+  ): Promise<Omit<Card, 'billingKey'>> {
     const { userId } = user;
     const { billingKey, cardName } = await Jtnet.createBillingKey(props);
     await this.isUnregisteredCardOrThrow(user, cardName);
     const { length: orderBy } = await $$$(this.getCards(user));
-    return (): any =>
-      prisma.cardModel.create({
-        data: { userId, billingKey, cardName, orderBy },
-        select: {
-          cardId: true,
-          userId: true,
-          orderBy: true,
-          cardName: true,
-          billingKey: false,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
+    const card = await prisma.cardModel.create({
+      data: { userId, billingKey, cardName, orderBy },
+      select: {
+        cardId: true,
+        userId: true,
+        orderBy: true,
+        cardName: true,
+        billingKey: false,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    logger.info(
+      `카드 / ${user.realname}(${user.userId})님이 ${card.cardName}(${card.cardId}) 카드를 등록하였습니다.`
+    );
+
+    return card;
   }
 
   public static async reorderCard(
@@ -149,6 +160,10 @@ export class Card {
   ): Promise<Prisma.BatchPayload[]> {
     let i = 0;
     const { userId } = user;
+    logger.info(
+      `카드 / ${user.realname}(${user.userId})님의 카드 순서를 재정렬하였습니다.`
+    );
+
     cardIds = await Joi.array().items(Joi.string()).validateAsync(cardIds);
     return prisma.$transaction(
       cardIds.map((cardId) =>

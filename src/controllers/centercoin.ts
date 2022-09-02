@@ -12,6 +12,10 @@ export class Centercoin {
         url: `users/${record.userId}/centercoin`,
         json: { centercoinBalance, message: displayName },
       });
+
+      logger.info(
+        `센터코인 / ${userId} 사용자에 대한 리워드 ${centercoinBalance.toLocaleString()}원을 지급하였습니다.`
+      );
     } catch (err: any) {
       const eventId = Sentry.captureException(err);
       logger.info(
@@ -30,6 +34,10 @@ export class Centercoin {
         url: `users/${record.userId}/centercoin`,
         json: { centercoinBalance, message: displayName },
       });
+
+      logger.info(
+        `센터코인 / ${userId} 사용자에 대한 리워드 ${centercoinBalance.toLocaleString()}원을 차감하였습니다..`
+      );
     } catch (err: any) {
       const eventId = Sentry.captureException(err);
       logger.info(
