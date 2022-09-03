@@ -24,7 +24,7 @@ export function getCardsRouter(): Router {
   router.post(
     '/',
     Wrapper(async (req) => {
-      const card = await $$$(Card.registerCard(req.user, req.body));
+      const card = await Card.registerCard(req.user, req.body);
       throw RESULT.SUCCESS({ details: { card } });
     })
   );

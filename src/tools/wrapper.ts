@@ -81,22 +81,17 @@ export function Wrapper(cb: WrapperCallback): WrapperCallback {
         result = RESULT.FAILED_VALIDATE({ details: { details } });
       }
 
-      if (!result) {
-        if (process.env.NODE_ENV !== 'prod') {
-          logger.error(err.message);
-          logger.error(err.stack);
-        }
-
-        result = RESULT.INVALID_ERROR();
-      }
-
+      if (!result) result = RESULT.INVALID_ERROR();
       const { statusCode, opcode, details, reportable, args } = result;
       const message = result.message
         ? res.__(result.message, ...args)
         : undefined;
-
+      
       if (reportable) eventId = Sentry.captureException(err);
       if (res.headersSent) return;
+
+      logger.error(err.message);
+      logger.error(err.stack);
       res.status(statusCode).json({
         opcode,
         eventId,

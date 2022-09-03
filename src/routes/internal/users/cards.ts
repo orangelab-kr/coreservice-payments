@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { $$$, Card, CardMiddleware, RESULT, Wrapper } from '../../..';
+import { $$$, Card, RESULT, Wrapper } from '../../..';
 import { InternalCardMiddleware } from '../../../middlewares/internal/card';
 
 export function getInternalUsersCardsRouter(): Router {
@@ -25,7 +25,7 @@ export function getInternalUsersCardsRouter(): Router {
   router.post(
     '/',
     Wrapper(async (req) => {
-      const card = await $$$(Card.registerCard(req.internal.user, req.body));
+      const card = await Card.registerCard(req.internal.user, req.body);
       throw RESULT.SUCCESS({ details: { card } });
     })
   );
