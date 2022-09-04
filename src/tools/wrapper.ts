@@ -86,7 +86,7 @@ export function Wrapper(cb: WrapperCallback): WrapperCallback {
       const message = result.message
         ? res.__(result.message, ...args)
         : undefined;
-      
+
       if (reportable) eventId = Sentry.captureException(err);
       if (res.headersSent) return;
 

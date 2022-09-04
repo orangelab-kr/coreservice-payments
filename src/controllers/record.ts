@@ -310,6 +310,7 @@ export class Record {
       skip?: number;
       search?: string;
       userId?: string;
+      rideId?: string;
       orderByField?:
         | 'amount'
         | 'refundedAt'
@@ -327,6 +328,7 @@ export class Record {
       skip,
       search,
       userId,
+      rideId,
       orderByField,
       orderBySort,
       onlyUnpaid,
@@ -335,6 +337,7 @@ export class Record {
       skip: Joi.number().default(0).optional(),
       search: Joi.string().allow('').default('').optional(),
       userId: Joi.string().uuid().optional(),
+      rideId: Joi.string().uuid().optional(),
       orderByField: Joi.string()
         .default('createdAt')
         .valid(
@@ -368,6 +371,10 @@ export class Record {
     if (onlyUnpaid) {
       where.refundedAt = null;
       where.processedAt = null;
+    }
+
+    if (rideId) {
+      where.properties = { path: '$.coreservice.rideId', equals: rideId };
     }
 
     const orderBy = { [orderByField]: orderBySort };
