@@ -50,7 +50,7 @@ export function getInternalUsersCardsRouter(): Router {
     '/:cardId',
     InternalCardMiddleware(),
     Wrapper(async (req) => {
-      await Card.checkReady(req.user);
+      await Card.checkReady(req.internal.user);
       const card = await Card.revokeCard(req.internal.user, req.internal.card);
       throw RESULT.SUCCESS({ details: { card } });
     })
