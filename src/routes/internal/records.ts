@@ -35,7 +35,8 @@ export function getInternalRecordsRouter(): Router {
     '/:recordId/retry',
     InternalRecordMiddleware(),
     Wrapper(async (req) => {
-      const { record, user } = req.internal;
+      const { record } = req.internal;
+      const user = await Record.getUserByRecord(record);
       await $$$(Record.retryPayment(user, record));
       throw RESULT.SUCCESS();
     })

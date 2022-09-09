@@ -208,6 +208,14 @@ export class Record {
       });
   }
 
+  public static async getUserByRecord(record: RecordModel): Promise<UserModel> {
+    const { userId } = record;
+    return getCoreServiceClient('accounts')
+      .get(`users/${userId}`)
+      .json<{ opcode: number; user: UserModel }>()
+      .then((r) => r.user);
+  }
+
   // 결제 재시도 후 데이터베이스 업데이트
   public static async retryPayment(
     user: UserModel,
