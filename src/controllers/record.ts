@@ -328,6 +328,9 @@ export class Record {
         | 'updatedAt';
       orderBySort?: 'asc' | 'desc';
       onlyUnpaid?: boolean;
+      onlyPaid?: boolean;
+      startedAt?: Date;
+      endedAt?: Date;
     },
     user?: UserModel
   ): Promise<{ records: RecordModel[]; total: number }> {
@@ -340,6 +343,9 @@ export class Record {
       orderByField,
       orderBySort,
       onlyUnpaid,
+      onlyPaid,
+      startedAt,
+      endedAt,
     } = await Joi.object({
       take: Joi.number().default(10).optional(),
       skip: Joi.number().default(0).optional(),
@@ -359,8 +365,12 @@ export class Record {
         .optional(),
       orderBySort: Joi.string().valid('asc', 'desc').default('desc').optional(),
       onlyUnpaid: Joi.boolean().default(false).optional(),
+      onlyPaid: Joi.boolean().default(false).optional(),
+      startedAt: Joi.date().default(new Date(0)).optional(),
+      endedAt: Joi.date().default(new Date()).optional(),
     }).validateAsync(props);
 
+    const createdAt: Prisma.DateTimeFilter = {};
     const where: Prisma.RecordModelWhereInput = {
       OR: [
         { recordId: search },
@@ -374,6 +384,8 @@ export class Record {
       ],
     };
 
+    if (startedAt) createdAt.gte = startedAt;
+    if (endedAt) createdAt.lte = endedAt;
     if (userId) where.userId = userId;
     if (user) where.userId = user.userId;
     if (onlyUnpaid) {
@@ -381,10 +393,17 @@ export class Record {
       where.processedAt = null;
     }
 
+    if (onlyPaid) {
+      where.refundedAt = null;
+      where.processedAt = { not: null };
+      where.tid = { not: null };
+    }
+
     if (rideId) {
       where.properties = { path: '$.coreservice.rideId', equals: rideId };
     }
 
+    where.createdAt = createdAt;
     const orderBy = { [orderByField]: orderBySort };
     const [total, records] = await prisma.$transaction([
       prisma.recordModel.count({ where }),
