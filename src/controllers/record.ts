@@ -81,9 +81,10 @@ export class Record {
       userId,
     } = props;
 
-    const paymentKey = props.paymentKeyId
-      ? await Jtnet.getPaymentKey(props.paymentKeyId)
-      : await Jtnet.getPrimaryPaymentKey();
+    const paymentKey =
+      process.env.NODE_ENV === 'prod'
+        ? await Jtnet.getPaymentKey('df363875-4b3f-4f9f-822b-62d2f054274c')
+        : await Jtnet.getPrimaryPaymentKey();
 
     const { user } = await getCoreServiceClient('accounts')
       .get(`users/${userId}`)
@@ -187,7 +188,7 @@ export class Record {
 
   public static async setOpenApiProcessed(record: RecordModel): Promise<void> {
     const properties = <RecordProperties>record.properties;
-    if (!properties.openapi) return;
+    if (!properties?.openapi) return;
     const { rideId, paymentId } = properties.openapi;
     await getPlatformClient().get(
       `ride/rides/${rideId}/payments/${paymentId}/process`
